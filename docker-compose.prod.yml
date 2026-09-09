@@ -213,10 +213,6 @@ services:
   # Perintah lain yang berguna (perintah bawaan bisa ditimpa):
   #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:status
   #     ^ melihat migrasi mana yang sudah/belum diterapkan.
-  #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:catalog:check
-  #     ^ preview katalog CSV tanpa menulis database.
-  #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:catalog
-  #     ^ upsert kategori semester + produk/harga; transaksi tidak disentuh.
   #   npm run db:seed sengaja menolak berjalan saat NODE_ENV=production.
   tools:
     profiles:

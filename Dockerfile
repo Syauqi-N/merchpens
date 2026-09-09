@@ -125,8 +125,6 @@ RUN set -eux; \
     npm pkg set "scripts.db:deploy=prisma migrate deploy" \
                 "scripts.db:status=prisma migrate status" \
                 "scripts.db:admin=tsx prisma/seed-admin.ts" \
-                "scripts.db:catalog=tsx prisma/import-catalog.ts" \
-                "scripts.db:catalog:check=CATALOG_DRY_RUN=1 tsx prisma/import-catalog.ts" \
                 "scripts.db:seed=tsx prisma/seed.ts"; \
     npm cache clean --force; \
     node node_modules/prisma/build/index.js --version
@@ -144,11 +142,9 @@ RUN set -eux; \
 COPY prisma.config.ts ./prisma.config.ts
 COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma/admin.ts ./prisma/admin.ts
-COPY prisma/catalog.ts ./prisma/catalog.ts
-COPY prisma/import-catalog.ts ./prisma/import-catalog.ts
 COPY prisma/seed-admin.ts ./prisma/seed-admin.ts
+COPY prisma/seed-images.ts ./prisma/seed-images.ts
 COPY prisma/seed.ts ./prisma/seed.ts
-COPY ["Daftar Harga.csv", "./Daftar Harga.csv"]
 
 # DATABASE_URL dummy: `prisma generate` tidak menyentuh database sama sekali,
 # tapi prisma.config.ts membaca variabel ini sehingga harus ADA nilainya.

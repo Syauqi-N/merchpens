@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: merch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: merch
+      POSTGRES_PASSWORD: merchsecret
+      POSTGRES_DB: merch
+    ports:
+      - "5435:5432"
+    volumes:
+      - merch-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U merch -d merch"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  merch-db:

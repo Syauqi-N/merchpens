@@ -1,0 +1,75 @@
+# Berkas yang TIDAK ikut dikirim ke Docker saat build.
+# Semakin sedikit isinya, semakin cepat build dan semakin kecil image.
+
+# --- dependensi & hasil build lokal ---
+node_modules
+.next
+out
+build
+coverage
+*.tsbuildinfo
+
+# Klien Prisma hasil generate lokal — di dalam Docker dibuat ulang
+# oleh "npx prisma generate" (lihat Dockerfile).
+src/generated
+
+# JANGAN menambahkan "prisma" ke daftar ini. Isi folder prisma/ (schema.prisma,
+# migrations/, seed.ts) beserta prisma.config.ts WAJIB ikut ke build context:
+# stage "migrator" di Dockerfile memakainya untuk merakit /app/migrator, yaitu
+# perkakas yang menjalankan migrasi saat container start dan perintah
+# `npm run db:admin` di server.
+
+# --- riwayat & metadata git ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- rahasia: JANGAN PERNAH masuk ke image ---
+# PENTING: aturan ini menahan kebocoran yang nyata. Kalau berkas .env ikut
+# terkirim ke build context, `next build` akan MENYALINNYA ke dalam hasil
+# build standalone, sehingga rahasia development ikut terpanggang di image.
+# Nilai env produksi disuntikkan saat container jalan (env_file di compose).
+.env
+.env.*
+
+# Gambar unggahan admin: isinya data produksi, bukan bagian dari kode.
+# Di produksi folder ini dipasang sebagai volume Docker.
+public/uploads
+private-uploads
+
+# --- berkas infrastruktur (tidak dibutuhkan di dalam image) ---
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.prod.yml
+nginx
+
+# --- dokumentasi & catatan internal ---
+docs
+*.md
+!README.md
+
+# --- skrip pengujian/utilitas yang tidak dipakai saat build ---
+scripts
+
+# --- konfigurasi editor & perkakas AI ---
+.vscode
+.idea
+.claude
+.agents
+.windsurf
+.omc
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+
+# --- sampah sistem & log ---
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.pem

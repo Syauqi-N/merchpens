@@ -1,0 +1,514 @@
+// Prisma 7 schema — merchandise PENS (Pre-Order berkuota per varian)
+// Generator: new `prisma-client` (ESM) → output to src/generated/prisma
+// Runtime import: import { PrismaClient } from "@/generated/prisma/client"
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7: connection URL lives in prisma.config.ts (Migrate/CLI) and is
+  // supplied at runtime via a driver adapter (@prisma/adapter-pg) in src/lib/prisma.ts
+}
+
+// ---------- Enums ----------
+
+/// Hanya dua peran. Seluruh PENGURUS adalah admin penuh (katalog, PO, pesanan,
+/// rekap, beranda, DAN kelola pengguna). Proteksi lockout (tidak bisa
+/// menonaktifkan diri sendiri / pengurus aktif terakhir) ada di Server Action.
+enum Role {
+  /// Pembeli (mahasiswa/alumni). Tidak punya akses panel admin.
+  CUSTOMER
+
+  /// Pengurus — semua hak admin.
+  PENGURUS
+}
+
+enum PreOrderStatus {
+  DRAFT // disiapkan admin, belum dibuka
+  ACTIVE // dibuka; pemesanan diizinkan selama belum lewat endAt
+  CLOSED // ditutup (manual admin atau otomatis setelah endAt)
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT // Menunggu Pembayaran
+  PAID // Dibayar (otomatis dari webhook Duitku)
+  PROCESSING // Diproses otomatis setelah seluruh periode PO terkait ditutup
+  COMPLETED // Selesai (admin)
+  CANCELLED // Dibatalkan
+  EXPIRED // Kadaluarsa — pembayaran tidak dilunasi, kuota dilepas kembali
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+/// Mahasiswa atau alumni PENS — dipilih pemesan saat checkout.
+enum CustomerType {
+  MAHASISWA
+  ALUMNI
+}
+
+/// Cara terima barang. Ongkir untuk SHIPPED dibayar MANUAL via WhatsApp admin
+/// (tidak masuk total gateway), jadi tidak ada pilihan kurir/ekspedisi.
+enum FulfillmentType {
+  PICKUP // ambil sendiri di kampus
+  SHIPPED // kirim ke alamat (ongkir manual via WA)
+}
+
+// ---------- Auth.js (v5) models ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // credentials login (wajib untuk checkout)
+  /// Nomor WA — wajib diisi saat pendaftaran akun baru.
+  phone         String?
+  role          Role      @default(CUSTOMER)
+
+  /// Akses dicabut tanpa menghapus akun. Pesanan menyimpan `userId` sebagai
+  /// relasi wajib, jadi menghapus pengguna akan merusak riwayat pesanannya —
+  /// menonaktifkan adalah cara yang benar untuk mencabut akses.
+  isActive Boolean @default(true)
+
+  accounts  Account[]
+  sessions  Session[]
+  orders    Order[]
+  contestEntries ContestEntry[]
+  contestVotes   ContestVote[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Catalog ----------
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+/// Produk dijual HANYA lewat periode pre-order berkuota — tidak ada stok
+/// reguler. Ketersediaan ditentukan oleh kuota PER VARIAN
+/// (`PreOrderVariantQuota`) pada periode yang sedang terbuka.
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  price       Int // harga normal (IDR); varian & periode PO boleh menimpanya
+
+  sku        String? @unique
+  brand      String?
+  unit       String  @default("pcs") // satuan: pcs, pack, set
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
+
+  categories    Category[]
+  images        ProductImage[]
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  preOrderItems PreOrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+/// Satu varian produk: ukuran (PDH S–XXL), desain/jenis (Tumbler, Lanyard,
+/// Keychain, Sticker Pack), atau kombinasinya. Harga final varian =
+/// `Product.price + priceDelta`, masih bisa ditimpa harga khusus PO per
+/// varian di `PreOrderVariantQuota.price`.
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  name      String // nama tampil, mis. "Size L" / "Desain Nebula Hitam"
+  size      String? // S, M, L, XL, XXL, All Size, ...
+  design    String? // nama desain/jenis, mis. "Nebula", "Logo PENS"
+  sku       String? @unique
+  /// Selisih harga terhadap Product.price (bisa negatif untuk diskon varian).
+  priceDelta Int     @default(0)
+  /// Foto khusus varian (opsional). Bila kosong, pakai gambar produk.
+  imageUrl   String?
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  product Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quotas  PreOrderVariantQuota[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// ---------- Pre-Order ----------
+
+/// Satu batch/periode PO. Hanya BOLEH ada satu periode yang terbuka untuk
+/// dipesan dalam satu waktu (status ACTIVE + now di dalam startAt..endAt) —
+/// ditegakkan di Server Action aktivasi. Periode lama yang ordernya masih
+/// PROCESSING tidak menghalangi pembukaan batch baru yang sudah tutup order.
+model PreOrderPeriod {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  status      PreOrderStatus @default(DRAFT)
+  closedAt    DateTime? // diisi saat admin menutup manual
+
+  /// Informasi pengambilan disalin dari pengaturan default saat periode dibuat,
+  /// lalu boleh disesuaikan khusus untuk batch ini.
+  estimatedPickupAt DateTime
+  pickupLocation    String
+  pickupSchedule    String
+  pickupNote        String   @default("")
+  /// Catatan pengiriman untuk batch ini (mis. estimasi mulai kirim).
+  /// Ongkir tetap manual via WA — bukan angka di sini.
+  shippingNote String @default("")
+
+  items     PreOrderItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([status])
+  @@index([startAt, endAt])
+}
+
+/// Baris produk di dalam sebuah periode PO. Harga khusus batch level produk;
+/// kuota dihitung PER VARIAN di `PreOrderVariantQuota`.
+model PreOrderItem {
+  id        String @id @default(cuid())
+  periodId  String
+  productId String
+
+  price Int? // harga khusus PO level produk; null = pakai Product.price
+
+  period        PreOrderPeriod         @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  product       Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantQuotas PreOrderVariantQuota[]
+  orderItems    OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([periodId, productId])
+  @@index([productId])
+}
+
+/// Kuota satu varian di dalam satu baris PO.
+/// Sisa kuota = quota - reserved. `reserved` bertambah saat checkout dan
+/// berkurang lagi bila pesanan kedaluwarsa/dibatalkan (auto-release).
+model PreOrderVariantQuota {
+  id             String @id @default(cuid())
+  preOrderItemId String
+  variantId      String
+
+  quota    Int // kuota awal yang ditetapkan admin
+  reserved Int  @default(0) // terpakai oleh pesanan (termasuk yang belum lunas)
+  price    Int? // harga khusus PO level varian; null = Product.price + priceDelta (+ override produk)
+
+  preOrderItem PreOrderItem   @relation(fields: [preOrderItemId], references: [id], onDelete: Cascade)
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([preOrderItemId, variantId])
+  @@index([variantId])
+}
+
+// ---------- Orders & Payments ----------
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique // kode untuk pelanggan, mis. INV-20260905-A1B2
+
+  // Checkout wajib login → userId selalu terisi.
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Snapshot data pemesan saat checkout
+  customerName  String
+  customerEmail String
+  customerPhone String
+
+  /// Mahasiswa / alumni PENS.
+  customerType CustomerType
+  /// Angkatan (dipilih dari dropdown; alumni mengisi angkatan lulus).
+  customerBatch String
+  /// Jurusan (dipilih dari dropdown master jurusan).
+  customerProgram String
+
+  /// Cara terima barang.
+  fulfillmentType FulfillmentType @default(PICKUP)
+  /// Alamat lengkap — wajib bila fulfillmentType = SHIPPED.
+  shippingAddress String?
+
+  note String?
+
+  subtotal Int
+  /// Selalu 0 di MVP: ongkir SHIPPED dibayar manual via WA admin, tidak masuk
+  /// total gateway. Kolom dipertahankan untuk pengembangan selanjutnya.
+  shippingCost Int         @default(0)
+  total        Int
+  status       OrderStatus @default(PENDING_PAYMENT)
+
+  /// Persetujuan syarat transaksi dicatat sebagai snapshot versi, bukan hanya
+  /// checkbox di browser.
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+
+  /// true bila order memuat minimal satu item PO (selalu true di sistem ini).
+  hasPreOrder Boolean @default(true)
+
+  /// Diisi sekali saat kuota yang direservasi order ini dikembalikan
+  /// (expired/cancelled). Penjaga idempotensi agar tidak dilepas dua kali.
+  stockReleasedAt DateTime?
+
+  items   OrderItem[]
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerBatch])
+  @@index([customerProgram])
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+
+  // Nullable agar penghapusan produk tidak merusak riwayat pesanan.
+  productId String?
+
+  /// Baris produk PO yang dipakai (untuk info periode/batch).
+  /// Nullable hanya demi kompatibilitas.
+  preOrderItemId String?
+
+  /// Baris kuota VARIAN yang dipakai — menentukan ke mana kuota dikembalikan
+  /// bila pesanan kedaluwarsa/dibatalkan.
+  variantQuotaId String?
+
+  /// Snapshot varian (ID bisa null bila varian dihapus; nama tetap tersimpan).
+  variantId   String?
+  variantName String? // snapshot nama varian saat dibeli, mis. "Size L"
+
+  productName  String // snapshot nama saat dibeli
+  productPrice Int // snapshot harga saat dibeli
+  quantity     Int
+  subtotal     Int
+
+  order        Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product?            @relation(fields: [productId], references: [id])
+  preOrderItem PreOrderItem?       @relation(fields: [preOrderItemId], references: [id])
+  variantQuota PreOrderVariantQuota? @relation(fields: [variantQuotaId], references: [id])
+
+  @@index([orderId])
+  @@index([preOrderItemId])
+  @@index([variantQuotaId])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider          String        @default("DUITKU")
+  method            String? // kode metode Duitku (BC, OV, SP, ...)
+  merchantOrderId   String        @unique // = Order.orderNumber yang dikirim ke Duitku
+  reference         String? // reference id dari Duitku
+  amount            Int
+  status            PaymentStatus @default(PENDING)
+  paymentUrl        String? // URL checkout hosted Duitku
+  paidAt            DateTime?
+  expiresAt         DateTime? // batas pesanan: 60 menit sejak checkout
+  invoiceExpiresAt  DateTime? // masa berlaku teknis link Duitku (bisa lebih singkat)
+  manualConfirmedAt DateTime?
+  manualConfirmedBy String?
+  manualNote        String?
+  rawResponse       Json? // respons mentah createInvoice
+  rawCallback       Json? // payload webhook mentah (jejak audit)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// ---------- Homepage / store settings ----------
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Key/value fleksibel untuk informasi beranda & toko. Nilai boleh berisi JSON
+/// (dipakai untuk `angkatan_list` & `jurusan_list`).
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Sayembara & Voting Desain BEM ----------
+
+enum ContestStatus {
+  DRAFT       // Disiapkan pengurus, belum dipublikasi
+  PUBLISHED   // Berjalan (fase submission/voting ditentukan tanggal)
+  CLOSED      // Ditutup panitia
+  ANNOUNCED   // Pemenang diumumkan resmi
+}
+
+enum SubmissionStatus {
+  PENDING     // Menunggu kurasi admin
+  APPROVED    // Disetujui, tampil saat voting
+  REJECTED    // Ditolak panitia
+}
+
+model Contest {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  description     String        @db.Text
+  rules           String?       @db.Text
+  bannerUrl       String?
+  prizeInfo       String?       // Info hadiah / apresiasi juara
+
+  status          ContestStatus @default(DRAFT)
+  submissionStart DateTime
+  submissionEnd   DateTime
+  votingStart     DateTime
+  votingEnd       DateTime
+
+  entries         ContestEntry[]
+  votes           ContestVote[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([submissionStart, submissionEnd])
+  @@index([votingStart, votingEnd])
+}
+
+model ContestEntry {
+  id          String           @id @default(cuid())
+  contestId   String
+  contest     Contest          @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String           // Nama karya desain
+  designerName String          // Nama lengkap peserta
+  department  String?          // Jurusan peserta
+  batch       String?          // Angkatan peserta
+  description String           @db.Text // Filosofi & konsep desain
+  imageUrl    String           // URL gambar mock-up utama (foto ke-1)
+  imageUrl2   String?          // URL gambar mock-up pendukung/kedua (opsional, foto ke-2)
+
+  status      SubmissionStatus @default(PENDING)
+  adminNote   String?
+  voteCount   Int              @default(0) // Agregat jumlah suara
+
+  votes       ContestVote[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([contestId, status])
+  @@index([userId])
+}
+
+model ContestVote {
+  id        String       @id @default(cuid())
+  contestId String
+  contest   Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  entryId   String
+  entry     ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime     @default(now())
+
+  // KUNCI INTEGRITAS: 1 user hanya dapat memberikan 1 vote per sayembara!
+  @@unique([contestId, userId])
+  @@index([entryId])
+}
+

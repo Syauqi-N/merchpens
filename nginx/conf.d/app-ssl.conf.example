@@ -1,0 +1,120 @@
+# ===========================================================================
+# Blok HTTPS — berkas ini BELUM AKTIF.
+#
+# nginx hanya membaca berkas berakhiran ".conf", jadi selama namanya masih
+# berakhiran ".example" isinya diabaikan. Aktifkan setelah sertifikat terbit.
+#
+# LANGKAH MENGAKTIFKAN HTTPS
+# ---------------------------------------------------------------------------
+# 1. Arahkan DNS domainmu (A record) ke IP VPS, lalu pastikan situs sudah
+#    bisa dibuka lewat http://domain-kamu.com
+#
+# 2. Terbitkan sertifikat (dijalankan dari folder proyek, nginx harus hidup):
+#
+#      docker run --rm \
+#        -v "$PWD/nginx/certbot/conf:/etc/letsencrypt" \
+#        -v "$PWD/nginx/certbot/www:/var/www/certbot" \
+#        certbot/certbot certonly --webroot -w /var/www/certbot \
+#        -d domain-kamu.com -d www.domain-kamu.com \
+#        --email email-kamu@contoh.com --agree-tos --no-eff-email
+#
+# 3. Ganti nama berkas ini:
+#
+#      mv nginx/conf.d/app-ssl.conf.example nginx/conf.d/app-ssl.conf
+#
+#    lalu ganti SEMUA "domain-kamu.com" di berkas ini dengan domain aslimu.
+#
+# 4. Buka nginx/conf.d/app.conf, cari blok "location /", lalu hapus tanda #
+#    pada baris "return 301 https://$host$request_uri;" di dalamnya.
+#    JANGAN memindahkan baris itu ke tingkat server: blok
+#    /.well-known/acme-challenge/ harus tetap dilayani lewat HTTP polos supaya
+#    perpanjangan sertifikat otomatis tidak gagal.
+#
+# 5. Muat ulang nginx:
+#
+#      docker compose -f docker-compose.prod.yml exec nginx nginx -t
+#      docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+#
+# 6. Perbarui .env: AUTH_URL, APP_URL, DUITKU_CALLBACK_URL, dan
+#    DUITKU_RETURN_URL harus memakai https://domain-kamu.com, lalu
+#    jalankan ulang aplikasinya:
+#
+#      docker compose -f docker-compose.prod.yml up -d --force-recreate app
+#
+# PERPANJANGAN OTOMATIS (sertifikat Let's Encrypt berlaku 90 hari) —
+# tambahkan ke crontab pemilik VPS, mis. jam 3 pagi setiap hari:
+#
+#   0 3 * * * cd /path/ke/proyek && docker run --rm \
+#     -v "$PWD/nginx/certbot/conf:/etc/letsencrypt" \
+#     -v "$PWD/nginx/certbot/www:/var/www/certbot" \
+#     certbot/certbot renew --webroot -w /var/www/certbot --quiet && \
+#     docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
+# ===========================================================================
+
+server {
+    listen 443 ssl;
+    http2 on;
+
+    # GANTI dengan domainmu.
+    server_name domain-kamu.com www.domain-kamu.com;
+
+    # GANTI "domain-kamu.com" pada dua baris ini sesuai nama folder yang
+    # dibuat certbot di nginx/certbot/conf/live/.
+    ssl_certificate     /etc/letsencrypt/live/domain-kamu.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/domain-kamu.com/privkey.pem;
+
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+
+    # Paksa browser memakai HTTPS selama setahun ke depan.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    set $app_upstream "app:3000";
+
+    # --- Webhook Duitku ----------------------------------------------------
+    # Penjelasan lengkap tiap baris ada di app.conf.
+    location = /api/duitku/callback {
+        proxy_pass http://$app_upstream$request_uri;
+
+        # Semua header ditulis ulang lengkap — lihat penjelasan di app.conf.
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Real-IP         $remote_addr;
+
+        proxy_request_buffering off;
+        proxy_buffering         off;
+        proxy_next_upstream     off;
+        proxy_read_timeout      180s;
+        proxy_send_timeout      180s;
+    }
+
+    # --- Gambar unggahan panel admin ---------------------------------------
+    # Dilayani langsung oleh nginx dari volume "uploads". Penjelasan lengkap
+    # kenapa TIDAK boleh diteruskan ke aplikasi ada di app.conf.
+    location ^~ /uploads/ {
+        alias /var/www/uploads/;
+
+        # Tanpa "always" — supaya 404 sementara tidak ikut di-cache 30 hari.
+        # Penjelasan lengkapnya ada di app.conf.
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        # Blok ini memakai add_header sendiri, jadi header HSTS di tingkat
+        # server tidak lagi diwariskan ke sini — ditulis ulang supaya gambar
+        # pun tetap membawa kebijakan HTTPS yang sama.
+        add_header Strict-Transport-Security "max-age=31536000" always;
+
+        autoindex off;
+        try_files $uri =404;
+
+        access_log off;
+    }
+
+    location / {
+        proxy_pass http://$app_upstream$request_uri;
+    }
+}

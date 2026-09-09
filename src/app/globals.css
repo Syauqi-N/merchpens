@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Palet khas Merch PENS (design.md): obsidian + emas + krem. */
+@theme {
+  --color-obsidian: #0d0d0d;
+  --color-coal: #161616;
+  --color-raise: #1f1f1f;
+  --color-gold: #d4a359;
+  --color-gold-light: #e5b869;
+  --color-gold-deep: #9e7638;
+  --color-cream: #f5f5f5;
+  --color-cream-soft: #e8e3d9;
+  --color-cream-muted: #a1a1a1;
+  --color-cream-faint: #6e6e6e;
+  --font-display: var(--font-display);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: #0d0d0d;
+  --foreground: #f5f5f5;
+  --card: #161616;
+  --card-foreground: #f5f5f5;
+  --popover: #1a1a1a;
+  --popover-foreground: #f5f5f5;
+  --primary: #d4a359;
+  --primary-foreground: #0d0d0d;
+  --secondary: #232323;
+  --secondary-foreground: #e8e3d9;
+  --muted: #1f1f1f;
+  --muted-foreground: #a1a1a1;
+  --accent: #232323;
+  --accent-foreground: #e5b869;
+  --destructive: oklch(0.65 0.22 25);
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 14%);
+  --ring: #9e7638;
+  --chart-1: #e5b869;
+  --chart-2: #d4a359;
+  --chart-3: #9e7638;
+  --chart-4: #6e6e6e;
+  --chart-5: #3a3a3a;
+  --sidebar: #111111;
+  --sidebar-foreground: #e8e3d9;
+  --sidebar-primary: #d4a359;
+  --sidebar-primary-foreground: #0d0d0d;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #e5b869;
+  --sidebar-border: rgb(255 255 255 / 8%);
+  --sidebar-ring: #9e7638;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /**
+   * Motif batik Nusantara bergaris emas di atas hitam (aset: images/background.jpg,
+   * dioptimasi ke /brand/bg-batik.webp — 1920w, ~52KB).
+   * Dipakai di hero & footer sesuai design.md (ornamen batik halus latar gelap).
+   */
+  .bg-batik {
+    background-image: url("/brand/bg-batik.webp");
+    background-size: cover;
+    background-position: center;
+  }
+
+  /** Kilau emas untuk CTA primer di atas latar gelap. */
+  .btn-gold-glow {
+    box-shadow:
+      0 0 0 1px rgb(212 163 89 / 0.35),
+      0 8px 28px -8px rgb(212 163 89 / 0.55);
+  }
+
+  .btn-gold-glow:hover {
+    box-shadow:
+      0 0 0 1px rgb(229 184 105 / 0.55),
+      0 10px 34px -8px rgb(229 184 105 / 0.65);
+  }
+
+  /** Garis pemisah emas tipis untuk section gelap. */
+  .gold-divider {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgb(212 163 89 / 0.5),
+      transparent
+    );
+  }
+}
+/* Strip teks berjalan (marquee) — aksen campaign PO.
+   Konten digandakan 2x lalu digeser -50% agar loop-nya mulus. */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee-x 28s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

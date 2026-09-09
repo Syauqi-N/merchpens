@@ -1,0 +1,76 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+/src/generated/prisma
+
+# --- project additions ---
+.env
+/src/generated/prisma
+# Gambar unggahan admin tidak ikut git, tapi FOLDERNYA harus tetap ada setelah
+# clone supaya endpoint unggah tidak gagal menulis pada deploy yang masih baru.
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Bukti transfer cicilan bersifat privat dan hanya disajikan lewat Route Handler
+# yang memeriksa sesi/kepemilikan. Isinya tidak boleh ikut git.
+/private-uploads/
+
+# Aturan ".env*" di atas ikut menahan berkas CONTOH yang isinya cuma
+# placeholder. Kalau dibiarkan, `git clone` di VPS tidak membawa berkas contoh
+# apa pun dan langkah pertama panduan deploy (`cp .env.production.example .env`)
+# langsung gagal. Dua berkas ini dikecualikan; berkas .env yang berisi nilai
+# ASLI tetap diabaikan oleh aturan ".env" di atas.
+!.env.example
+!.env.production.example
+
+# Metadata lokal milik agent/editor. Bukan source aplikasi dan beberapa folder
+# menyimpan state sesi yang tidak pantas ikut ke repository.
+/.agents/
+/.claude/
+/.omc/
+/.windsurf/
+/skills-lock.json
+
+# Additional agent / scratch files
+/test-*.png
+/playwright-report/
+/test-results/

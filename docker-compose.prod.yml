@@ -1,0 +1,311 @@
+# ===========================================================================
+# Susunan layanan PRODUKSI untuk VPS.
+#
+#   nginx  -> pintu masuk dari internet (port 80/443), meneruskan ke app
+#   app    -> aplikasi Next.js (migrasi database jalan otomatis saat start)
+#   cron   -> pemanggil berkala /api/cron/expire-orders (pelepas kuota PO)
+#   db     -> PostgreSQL 16, datanya disimpan di volume Docker
+#   tools  -> layanan sekali-jalan untuk membuat akun admin (tidak ikut nyala)
+#
+# CARA PAKAI
+# ---------------------------------------------------------------------------
+#   1. Salin .env.production.example menjadi .env, lalu isi semua nilainya.
+#      Namanya HARUS tepat ".env" (bukan ".env.production"): berkas itulah yang
+#      dibaca compose, baik untuk env_file maupun untuk mengisi ${VARIABEL}
+#      di berkas ini.
+#        cp .env.production.example .env && chmod 600 .env
+#   2. Ganti "domain-kamu.com" di nginx/conf.d/app.conf dengan domain asli.
+#   3. Isi APP_IMAGE dan APP_TAG dengan image GHCR yang sudah dipublish.
+#   4. docker compose -f docker-compose.prod.yml pull app cron
+#   5. docker compose -f docker-compose.prod.yml up -d --no-build
+#   6. docker compose -f docker-compose.prod.yml logs -f app
+#   7. Buat akun admin dan import katalog — lihat layanan "tools" di bawah.
+#   8. Aktifkan HTTPS — lihat nginx/conf.d/app-ssl.conf.example.
+#
+# ISI .env YANG DIBACA BERKAS INI
+# ---------------------------------------------------------------------------
+#   APP_IMAGE, APP_TAG
+#       -> image GHCR tanpa tag dan tag release immutable yang akan dijalankan.
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#       -> dipakai membuat database di dalam container db.
+#   DATABASE_URL
+#       -> WAJIB memakai nama layanan "db" dan port 5432 (port di dalam
+#          jaringan Docker, bukan port di komputermu), contoh:
+#          postgresql://toko:SANDI_KUAT@db:5432/merch?schema=public
+#          Sandinya harus sama persis dengan POSTGRES_PASSWORD.
+#   AUTH_SECRET, AUTH_URL, APP_URL, AUTH_TRUST_HOST=true
+#   DUITKU_ENV, DUITKU_MERCHANT_CODE, DUITKU_API_KEY,
+#   DUITKU_CALLBACK_URL, DUITKU_RETURN_URL
+#   CRON_SECRET
+#       -> rahasia untuk endpoint /api/cron/expire-orders; dipakai juga oleh
+#          layanan "cron" di bawah.
+#   TZ (opsional, bawaan Asia/Jakarta), CRON_INTERVAL_MS (opsional, bawaan
+#   300000 = 5 menit), MIGRATE_MAX_ATTEMPTS & MIGRATE_RETRY_DELAY (opsional,
+#   dibaca entrypoint saat menunggu database siap).
+#
+# CATATAN KEAMANAN
+# ---------------------------------------------------------------------------
+#   - Tidak ada satu pun rahasia yang ditulis di berkas ini; semuanya dibaca
+#     dari .env. Berkas .env JANGAN pernah di-commit ke git.
+#   - Port PostgreSQL (5432) dan port aplikasi (3000) TIDAK dipublikasikan ke
+#     internet. Keduanya hanya bisa dihubungi dari dalam jaringan Docker.
+#     Untuk mengintip database dari VPS, pakai:
+#       docker compose -f docker-compose.prod.yml exec db psql -U <user> <db>
+# ===========================================================================
+
+name: toko-online
+
+# Batasi ukuran log supaya disk VPS tidak penuh pelan-pelan.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Satu image immutable dipakai bersama oleh app, cron, dan tools. Image dibangun
+# GitHub Actions lalu ditarik dari GHCR; VPS tidak membutuhkan source code,
+# Node.js, npm, maupun RAM tambahan untuk `next build`.
+x-app-image: &app-image
+  image: "${APP_IMAGE:?APP_IMAGE belum diisi di berkas .env}:${APP_TAG:-stable}"
+  pull_policy: always
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: merch-db
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      # Nilainya diambil dari .env di folder yang sama. Tanda ":?" membuat
+      # compose berhenti dengan pesan jelas kalau variabelnya belum diisi.
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER belum diisi di berkas .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD belum diisi di berkas .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB belum diisi di berkas .env}
+      TZ: ${TZ:-Asia/Jakarta}
+      PGTZ: ${TZ:-Asia/Jakarta}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Sengaja TIDAK ada "ports:" — database tidak boleh dijangkau dari luar.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - merch-net
+
+  app:
+    <<: *app-image
+    container_name: merch-app
+    restart: unless-stopped
+    logging: *default-logging
+    # Semua rahasia dibaca dari .env, tidak ada yang ditulis di berkas ini.
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+    depends_on:
+      # Aplikasi baru dijalankan setelah PostgreSQL benar-benar siap menerima
+      # koneksi, supaya migrasi tidak gagal di percobaan pertama.
+      db:
+        condition: service_healthy
+    # Hanya nginx yang boleh menghubungi port ini — tidak dipublikasikan.
+    expose:
+      - "3000"
+    volumes:
+      # Gambar yang diunggah lewat panel admin (produk, kategori, banner).
+      #
+      # WAJIB berupa volume. Tanpa ini SEMUA gambar hilang setiap kali image
+      # diganti atau container dibuat ulang — termasuk saat memasang release
+      # image baru dari GHCR. Itu kehilangan data yang nyata,
+      # bukan sekadar cache.
+      #
+      # Kenapa titik pasangnya /app/public/uploads:
+      #   - Dockerfile memakai WORKDIR /app dan menjalankan `node server.js`,
+      #     jadi process.cwd() aplikasi = /app.
+      #   - src/app/api/upload/route.ts menulis ke
+      #     path.join(process.cwd(), "public", "uploads") = /app/public/uploads.
+      #   - Berkasnya dilayani sebagai aset statis di URL /uploads/<berkas>,
+      #     yang oleh Next dipetakan dari folder public/ yang sama.
+      # Salah satu huruf pun berbeda -> gambar tetap masuk ke dalam container
+      # dan tetap hilang saat container diganti.
+      #
+      # Folder ini sudah dibuat di image dengan pemilik nextjs:nodejs (uid 1001)
+      # supaya volume barunya mewarisi kepemilikan itu dan proses non-root bisa
+      # menulis. Entrypoint ikut memeriksanya dan memberi peringatan jelas kalau
+      # ternyata tidak bisa ditulis.
+      - uploads:/app/public/uploads
+    stop_grace_period: 30s
+    networks:
+      - merch-net
+
+  cron:
+    # Image yang sama dengan app; ENTRYPOINT-nya diganti supaya container ini
+    # TIDAK ikut menjalankan migrasi, hanya memanggil endpoint cron.
+    <<: *app-image
+    container_name: merch-cron
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+      # Jeda antar panggilan dalam milidetik (bawaan 5 menit).
+      CRON_INTERVAL_MS: ${CRON_INTERVAL_MS:-300000}
+    depends_on:
+      app:
+        condition: service_started
+    entrypoint: ["node", "-e"]
+    command:
+      - |
+        // Penyapu pesanan kedaluwarsa. Tanpa ini, kuota pre-order pesanan
+        // yang tidak dibayar tidak pernah dilepas kembali.
+        const endpoint = "http://app:3000/api/cron/expire-orders";
+        const jeda = Number(process.env.CRON_INTERVAL_MS || 300000);
+        const rahasia = process.env.CRON_SECRET || "";
+        if (!rahasia) {
+          console.warn("[cron] CRON_SECRET kosong di .env - endpoint cron jadi terbuka untuk siapa saja");
+        }
+        async function sapu() {
+          try {
+            const res = await fetch(endpoint, {
+              headers: { authorization: "Bearer " + rahasia },
+            });
+            if (!res.ok) {
+              console.error("[cron] gagal, status " + res.status + ": " + (await res.text()));
+            }
+          } catch (galat) {
+            console.error("[cron] tidak bisa menghubungi aplikasi: " + galat.message);
+          }
+        }
+        setInterval(sapu, jeda);
+        sapu();
+    networks:
+      - merch-net
+
+  # Layanan SEKALI-JALAN untuk perawatan database. Karena diberi "profiles",
+  # layanan ini TIDAK ikut menyala pada `docker compose up`.
+  #
+  # Memakai IMAGE YANG SAMA PERSIS dengan layanan app (bukan image kedua, bukan
+  # build ulang): image produksi sudah membawa folder /app/migrator berisi CLI
+  # Prisma, tsx, prisma/seed.ts, dan Prisma Client hasil generate. Karena itu
+  # perintahnya tetap bekerja walau cache build sudah dibersihkan.
+  #
+  # working_dir sengaja /app/migrator — di situlah package.json yang punya
+  # skrip db:admin / db:catalog / db:status / db:deploy berada.
+  #
+  # MEMBUAT AKUN ADMIN PERTAMA (wajib, kalau tidak tidak ada yang bisa masuk
+  # ke panel admin). Isi dulu dua baris ini di .env:
+  #
+  #   SEED_ADMIN_EMAIL=admin@domain-kamu.com
+  #   SEED_ADMIN_PASSWORD=<password kuat, minimal 8 karakter>
+  #
+  # lalu jalankan:
+  #
+  #   docker compose -f docker-compose.prod.yml run --rm tools
+  #
+  # Setelah akun jadi, HAPUS lagi dua baris itu dari .env. Menaruhnya di .env
+  # lebih aman daripada mengetiknya di terminal (tidak masuk riwayat shell).
+  # Perintah yang sama juga dipakai untuk MERESET password admin yang lupa:
+  # kalau emailnya sudah ada, passwordnya diperbarui.
+  #
+  # Perintah lain yang berguna (perintah bawaan bisa ditimpa):
+  #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:status
+  #     ^ melihat migrasi mana yang sudah/belum diterapkan.
+  #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:catalog:check
+  #     ^ preview katalog CSV tanpa menulis database.
+  #   docker compose -f docker-compose.prod.yml run --rm tools npm run db:catalog
+  #     ^ upsert kategori semester + produk/harga; transaksi tidak disentuh.
+  #   npm run db:seed sengaja menolak berjalan saat NODE_ENV=production.
+  tools:
+    profiles:
+      - tools
+    <<: *app-image
+    restart: "no"
+    logging: *default-logging
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Entrypoint bawaan image tetap dipakai, jadi migrasi database dipastikan
+    # sudah diterapkan sebelum akun admin dibuat.
+    working_dir: /app/migrator
+    command: ["npm", "run", "db:admin"]
+    networks:
+      - merch-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: merch-nginx
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Konfigurasi reverse proxy. Setelah mengubahnya, jalankan:
+      #   docker compose -f docker-compose.prod.yml exec nginx nginx -t
+      #   docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # Folder tantangan Let's Encrypt (diisi oleh certbot).
+      - ./nginx/certbot/www:/var/www/certbot:ro
+      # Sertifikat Let's Encrypt (dibuat certbot). Kosong sampai HTTPS diaktifkan.
+      - ./nginx/certbot/conf:/etc/letsencrypt:ro
+      # Gambar unggahan panel admin — volume yang SAMA dengan milik layanan app,
+      # di sini dipasang read-only. nginx melayani /uploads/ langsung dari sini
+      # (lihat blok "location ^~ /uploads/" di nginx/conf.d/app.conf).
+      #
+      # WAJIB. Tanpa mount ini nginx menjawab 404 untuk SEMUA gambar produk,
+      # kategori, dan banner. Permintaannya juga TIDAK boleh diteruskan ke
+      # aplikasi: server produksi Next hanya mendata isi public/ sekali saat
+      # menyala, sehingga gambar yang baru diunggah tetap 404 di sana sampai
+      # container di-restart.
+      - uploads:/var/www/uploads:ro
+    depends_on:
+      - app
+    networks:
+      - merch-net
+
+volumes:
+  # Data PostgreSQL. JANGAN dihapus — di sinilah seluruh isi toko tersimpan.
+  # Cadangkan berkala, contoh:
+  #   docker compose -f docker-compose.prod.yml exec -T db \
+  #     pg_dump -U <user> <db> | gzip > backup-$(date +%F).sql.gz
+  #
+  # Gambar unggahan dicadangkan terpisah, contoh:
+  #   docker run --rm -v merch-uploads:/data -v "$PWD:/backup" \
+  #     alpine tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
+  db-data:
+    name: merch-db-data
+
+  # Gambar produk/kategori/banner hasil unggahan panel admin. Sama pentingnya
+  # dengan db-data: ikut dicadangkan, jangan dihapus. Isinya TIDAK ada di
+  # dalam git dan TIDAK ada di dalam image — hanya ada di volume ini.
+  #
+  # Memulihkan dari cadangan (hentikan dulu app supaya tidak ada yang menulis):
+  #   docker compose -f docker-compose.prod.yml stop app
+  #   docker run --rm -v merch-uploads:/data -v "$PWD:/backup" \
+  #     alpine sh -c "tar xzf /backup/uploads-2026-01-31.tar.gz -C /data"
+  #   docker compose -f docker-compose.prod.yml start app
+  #
+  # Kalau unggahan gagal dengan galat "permission denied" di log app (biasanya
+  # karena volume ini terlanjur dibuat oleh image versi lama sebagai milik
+  # root), perbaiki kepemilikannya sekali saja:
+  #   docker run --rm -v merch-uploads:/data alpine chown -R 1001:1001 /data
+  uploads:
+    name: merch-uploads
+
+  # Bukti transfer cicilan. Cadangkan bersama database karena baris
+  # InstallmentProof di database merujuk berkas dalam volume ini:
+  #     alpine tar czf /backup/installment-proofs-$(date +%F).tar.gz -C /data .
+  # Jangan pasang volume ini ke nginx atau direktori public aplikasi.
+
+networks:
+  merch-net:
+    name: merch-net

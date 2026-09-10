@@ -2,7 +2,7 @@
 // gagal keras kalau suatu saat ada Client Component yang mengimpornya.
 import "server-only";
 
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -10,7 +10,20 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { can, type Capability } from "@/lib/permissions";
-import { clientIp, consumeRateLimit } from "@/lib/rate-limit";
+import {
+  clientIp,
+  consumeRateLimit,
+  isRateLimited,
+  resetRateLimit,
+} from "@/lib/rate-limit";
+
+export class RateLimitedError extends CredentialsSignin {
+  code = "too_many_attempts";
+}
+
+export class InactiveUserError extends CredentialsSignin {
+  code = "user_inactive";
+}
 
 const credentialsSchema = z.object({
   email: z.email(),
@@ -45,41 +58,50 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const ip = await clientIp();
           const ipCheck = consumeRateLimit(`login-ip:${ip}`, 30, 10 * 60_000);
-          console.log("[AUTH_DEBUG] IP:", ip, "RateLimit:", ipCheck.ok);
           if (!ipCheck.ok) {
-            console.log("[AUTH_DEBUG] Blocked by IP rate limit");
-            return null;
+            throw new RateLimitedError();
           }
         } catch (e) {
-          console.log("[AUTH_DEBUG] Error getting IP:", e);
+          if (e instanceof CredentialsSignin) throw e;
         }
 
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) {
-          console.log("[AUTH_DEBUG] Schema parse failed:", parsed.error);
           return null;
         }
 
         const normalizedEmail = parsed.data.email.toLowerCase().trim();
+
+        // Anti brute-force lapis 2: Maksimal 5x gagal dalam 15 menit per email
+        if (isRateLimited(`login-fail:${normalizedEmail}`, 5)) {
+          throw new RateLimitedError();
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: normalizedEmail },
         });
-        console.log("[AUTH_DEBUG] User found:", Boolean(user), "Has passwordHash:", Boolean(user?.passwordHash));
+
         if (!user?.passwordHash) {
-          console.log("[AUTH_DEBUG] No user or passwordHash");
+          consumeRateLimit(`login-fail:${normalizedEmail}`, 5, 15 * 60_000);
           return null;
         }
 
         const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        console.log("[AUTH_DEBUG] Password valid:", valid);
-        if (!valid) return null;
-
-        if (!user.isActive) {
-          console.log("[AUTH_DEBUG] User inactive");
+        if (!valid) {
+          const failCheck = consumeRateLimit(`login-fail:${normalizedEmail}`, 5, 15 * 60_000);
+          if (!failCheck.ok) {
+            throw new RateLimitedError();
+          }
           return null;
         }
 
-        console.log("[AUTH_DEBUG] Login SUCCESS for:", user.email);
+        if (!user.isActive) {
+          throw new InactiveUserError();
+        }
+
+        // Berhasil login -> reset catatan gagal
+        resetRateLimit(`login-fail:${normalizedEmail}`);
+
         return {
           id: user.id,
           email: user.email,

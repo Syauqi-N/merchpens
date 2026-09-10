@@ -2,7 +2,12 @@ import "server-only";
 
 import { headers } from "next/headers";
 
-export { consumeRateLimit, type RateLimitResult } from "./rate-limit-store";
+export {
+  consumeRateLimit,
+  isRateLimited,
+  resetRateLimit,
+  type RateLimitResult,
+} from "./rate-limit-store";
 
 /**
  * Rate limit dalam memori (fixed window).

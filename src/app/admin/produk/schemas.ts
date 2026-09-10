@@ -176,8 +176,8 @@ export const variantFormSchema = z.object({
   priceDelta: z
     .string()
     .trim()
-    .min(1, "Selisih harga wajib diisi")
-    .regex(/^-?\d+$/, "Selisih harga hanya boleh berisi angka (boleh diawali tanda -)")
+    .transform((value) => (value === "" ? "0" : value))
+    .refine((value) => /^-?\d+$/.test(value), "Selisih harga hanya boleh berisi angka (boleh diawali tanda -)")
     .refine((value) => Number(value) >= -2_000_000_000, "Selisih harga terlalu kecil")
     .refine((value) => Number(value) <= 2_000_000_000, "Selisih harga terlalu besar"),
 

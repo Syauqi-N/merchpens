@@ -160,7 +160,7 @@ export function VariantFormDialog({
             <Input
               id={mode === "create" ? "variant-name-new" : `variant-name-${variantId}`}
               className={inputClass}
-              placeholder='Contoh: Size L / Desain Nebula Hitam'
+              placeholder='Contoh: Size L / Hitam'
               aria-invalid={Boolean(errors.name)}
               {...register("name")}
             />
@@ -194,12 +194,12 @@ export function VariantFormDialog({
               label="Desain"
               htmlFor={mode === "create" ? "variant-design-new" : `variant-design-${variantId}`}
               error={errors.design?.message}
-              hint="Contoh: Nebula, Logo PENS. Boleh dikosongkan."
+              hint="Contoh: Hitam, Navy, Putih. Boleh dikosongkan."
             >
               <Input
                 id={mode === "create" ? "variant-design-new" : `variant-design-${variantId}`}
                 className={inputClass}
-                placeholder="Nebula Hitam"
+                placeholder="Hitam"
                 aria-invalid={Boolean(errors.design)}
                 {...register("design")}
               />
@@ -216,7 +216,7 @@ export function VariantFormDialog({
               <Input
                 id={mode === "create" ? "variant-sku-new" : `variant-sku-${variantId}`}
                 className={cn(inputClass, "font-mono text-sm")}
-                placeholder="PRD-L-NEBULA"
+                placeholder="MCH-L-BLK"
                 aria-invalid={Boolean(errors.sku)}
                 {...register("sku")}
               />

@@ -473,7 +473,13 @@ export async function addProductToPeriod(input: unknown): Promise<ActionResult> 
       prisma.preOrderPeriod.findUnique({ where: { id: periodId }, select: { id: true } }),
       prisma.product.findUnique({
         where: { id: productId },
-        select: { id: true, name: true, isActive: true },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          isActive: true,
+          variants: { select: { id: true } },
+        },
       }),
     ]);
 
@@ -486,9 +492,41 @@ export async function addProductToPeriod(input: unknown): Promise<ActionResult> 
       };
     }
 
-    await prisma.preOrderItem.create({
+    // Bila produk belum punya varian sama sekali (misal produk non-varian),
+    // otomatis buatkan 1 varian standar agar kuotanya bisa langsung diisi.
+    let createdVariantId: string | null = null;
+    if (product.variants.length === 0) {
+      const defaultVariant = await prisma.productVariant.create({
+        data: {
+          productId: product.id,
+          name: "Reguler",
+          size: "All Size",
+          design: null,
+          sku: product.sku ? `${product.sku}-REG` : null,
+          priceDelta: 0,
+          sortOrder: 0,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      createdVariantId = defaultVariant.id;
+    }
+
+    const preOrderItem = await prisma.preOrderItem.create({
       data: { periodId, productId, price },
+      select: { id: true },
     });
+
+    // Otomatis masukkan varian ke kuota default jika baru dibuat
+    if (createdVariantId) {
+      await prisma.preOrderVariantQuota.create({
+        data: {
+          preOrderItemId: preOrderItem.id,
+          variantId: createdVariantId,
+          quota: 100, // default quota
+        },
+      });
+    }
 
     revalidatePeriod(periodId);
     return {

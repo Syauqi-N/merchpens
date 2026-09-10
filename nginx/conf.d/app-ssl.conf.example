@@ -98,7 +98,7 @@ server {
     # Dilayani langsung oleh nginx dari volume "uploads". Penjelasan lengkap
     # kenapa TIDAK boleh diteruskan ke aplikasi ada di app.conf.
     location ^~ /uploads/ {
-        alias /var/www/uploads/;
+        root /var/www;
 
         # Tanpa "always" — supaya 404 sementara tidak ikut di-cache 30 hari.
         # Penjelasan lengkapnya ada di app.conf.

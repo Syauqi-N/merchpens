@@ -129,7 +129,7 @@ export function ProductForm({
               <Input
                 id="name"
                 className={inputClass}
-                placeholder="Contoh: Scaler Ultrasonik Woodpecker UDS-K"
+                placeholder="Contoh: Kemeja PDH Mahasiswa PENS"
                 aria-invalid={Boolean(errors.name)}
                 {...register("name", {
                   onChange: (event) => handleNameChange(event.target.value),
@@ -148,7 +148,7 @@ export function ProductForm({
                 <Input
                   id="slug"
                   className={cn(inputClass, "font-mono text-sm")}
-                  placeholder="scaler-ultrasonik-woodpecker"
+                  placeholder="pdh-mahasiswa-pens"
                   aria-invalid={Boolean(errors.slug)}
                   {...register("slug", { onChange: () => setSlugTouched(true) })}
                 />
@@ -225,7 +225,7 @@ export function ProductForm({
                 <Input
                   id="sku"
                   className={cn(inputClass, "font-mono text-sm")}
-                  placeholder="DNT-SCL-001"
+                  placeholder="MCH-PDH-001"
                   aria-invalid={Boolean(errors.sku)}
                   {...register("sku")}
                 />
@@ -235,7 +235,7 @@ export function ProductForm({
                 <Input
                   id="brand"
                   className={inputClass}
-                  placeholder="Woodpecker"
+                  placeholder="BEM PENS"
                   aria-invalid={Boolean(errors.brand)}
                   {...register("brand")}
                 />

@@ -11,5 +11,8 @@ export default defineConfig({
   // Prisma 7: Migrate/CLI reads the connection URL from here (loaded via dotenv above)
   datasource: {
     url: process.env["DATABASE_URL"],
+    ...(process.env["SHADOW_DATABASE_URL"]
+      ? { shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"] }
+      : {}),
   },
 });

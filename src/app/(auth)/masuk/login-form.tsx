@@ -42,10 +42,22 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     console.log("[LOGIN_CLIENT] signIn result:", result);
 
     if (!result || result.error) {
-      setFormError(result?.error === "CredentialsSignin" 
-        ? "Email atau kata sandi salah. Silakan periksa kembali." 
-        : `Gagal masuk: ${result?.error ?? "terjadi kesalahan tak terduga"}`
-      );
+      const urlCode = result?.url
+        ? new URL(result.url, typeof window !== "undefined" ? window.location.origin : "http://localhost:3000").searchParams.get("code")
+        : null;
+      const code = (result as { code?: string })?.code || urlCode;
+
+      if (code === "too_many_attempts") {
+        setFormError(
+          "Terlalu banyak percobaan masuk yang gagal (maksimal 5 kali). Akun dikunci sementara selama 15 menit demi keamanan."
+        );
+      } else if (code === "user_inactive") {
+        setFormError("Akun kamu sedang dinonaktifkan. Silakan hubungi pengurus BEM.");
+      } else if (result?.error === "CredentialsSignin") {
+        setFormError("Email atau kata sandi salah. Silakan periksa kembali.");
+      } else {
+        setFormError(`Gagal masuk: ${result?.error ?? "terjadi kesalahan tak terduga"}`);
+      }
       return;
     }
 

@@ -124,6 +124,17 @@ export async function createProduct(input: unknown): Promise<ActionResult> {
           connect: data.categoryIds.map((categoryId) => ({ id: categoryId })),
         },
         images: { create: normalizeImages(data.images) },
+        variants: {
+          create: {
+            name: "Reguler",
+            size: "All Size",
+            design: null,
+            sku: sku ? `${sku}-REG` : null,
+            priceDelta: 0,
+            sortOrder: 0,
+            isActive: true,
+          },
+        },
       },
       select: { id: true },
     });

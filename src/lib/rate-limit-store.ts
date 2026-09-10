@@ -64,3 +64,24 @@ export function consumeRateLimit(
   existing.count += 1;
   return { ok: true, remaining: limit - existing.count, retryAfterMs: 0 };
 }
+
+/**
+ * Cek apakah sebuah kunci sudah melebihi batas tanpa menambah hitungan.
+ * Mengembalikan true jika sudah terblokir.
+ */
+export function isRateLimited(key: string, limit: number): boolean {
+  const now = Date.now();
+  sweep(now);
+  const existing = buckets.get(key);
+  if (!existing || existing.resetAt <= now) return false;
+  return existing.count >= limit;
+}
+
+/**
+ * Reset token untuk sebuah kunci (mis. saat login berhasil).
+ */
+export function resetRateLimit(key: string): void {
+  buckets.delete(key);
+}
+
+

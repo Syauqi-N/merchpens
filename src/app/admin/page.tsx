@@ -259,6 +259,8 @@ async function loadCatalogSummary(now: Date) {
 export type AudienceFilter = {
   periodId: string;
   customerType: "" | "MAHASISWA" | "ALUMNI";
+  batch: string;
+  program: string;
 };
 
 type AudienceRow = {
@@ -273,43 +275,83 @@ type AudienceRow = {
  * Pesanan lunas per angkatan & per jurusan — bahan promosi terarah.
  *
  * Hanya menghitung pesanan berstatus pendapatan (PAID/PROCESSING/COMPLETED).
- * Filter periode & tipe datang dari query string dashboard (`?po=...&tipe=...`)
- * sehingga pengurus bisa melihat sebaran per batch.
+ * Filter periode, tipe, angkatan & jurusan datang dari query string dashboard
+ * (`?po=...&tipe=...&angkatan=...&jurusan=...`).
  */
 async function loadAudienceSummary(filter: AudienceFilter): Promise<{
   periods: { id: string; name: string }[];
+  availableBatches: string[];
+  availablePrograms: string[];
   byBatch: AudienceRow[];
   byProgram: AudienceRow[];
   totalOrders: number;
+  totalItems: number;
+  totalRevenue: number;
+  topBatch: AudienceRow | null;
+  bottomBatch: AudienceRow | null;
+  topProgram: AudienceRow | null;
+  bottomProgram: AudienceRow | null;
 }> {
-  const periods = await prisma.preOrderPeriod.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 12,
-    select: { id: true, name: true },
-  });
+  const [periods, allBatches, allPrograms] = await Promise.all([
+    prisma.preOrderPeriod.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      select: { id: true, name: true },
+    }),
+    prisma.order.groupBy({
+      by: ["customerBatch"],
+      where: {
+        status: { in: [...REVENUE_STATUSES] },
+        customerBatch: { not: "" },
+      },
+      orderBy: { customerBatch: "asc" },
+    }),
+    prisma.order.groupBy({
+      by: ["customerProgram"],
+      where: {
+        status: { in: [...REVENUE_STATUSES] },
+        customerProgram: { not: "" },
+      },
+      orderBy: { customerProgram: "asc" },
+    }),
+  ]);
 
-  const orderWhere: Prisma.OrderWhereInput = {
+  const availableBatches = allBatches
+    .map((b) => b.customerBatch?.trim() ?? "")
+    .filter((b) => b.length > 0);
+
+  const availablePrograms = allPrograms
+    .map((p) => p.customerProgram?.trim() ?? "")
+    .filter((p) => p.length > 0 && p !== "-");
+
+  const baseOrderWhere: Prisma.OrderWhereInput = {
     status: { in: [...REVENUE_STATUSES] },
     ...(filter.customerType ? { customerType: filter.customerType } : {}),
     ...(filter.periodId
       ? { items: { some: { preOrderItem: { periodId: filter.periodId } } } }
       : {}),
+    ...(filter.batch ? { customerBatch: filter.batch } : {}),
+    ...(filter.program ? { customerProgram: filter.program } : {}),
   };
 
-  const [batchGroups, programGroups] = await Promise.all([
+  const [batchGroups, programGroups, overallItemsAgg] = await Promise.all([
     prisma.order.groupBy({
       by: ["customerBatch"],
-      where: orderWhere,
+      where: baseOrderWhere,
       _count: { _all: true },
       _sum: { total: true },
       orderBy: { customerBatch: "asc" },
     }),
     prisma.order.groupBy({
       by: ["customerProgram"],
-      where: orderWhere,
+      where: baseOrderWhere,
       _count: { _all: true },
       _sum: { total: true },
       orderBy: { customerProgram: "asc" },
+    }),
+    prisma.orderItem.aggregate({
+      _sum: { quantity: true },
+      where: { order: baseOrderWhere },
     }),
   ]);
 
@@ -328,7 +370,7 @@ async function loadAudienceSummary(filter: AudienceFilter): Promise<{
       groups.map(async (group) => {
         const { key, label } = keyOf(group);
         const scopedOrder: Prisma.OrderWhereInput = {
-          ...orderWhere,
+          ...baseOrderWhere,
           ...(group.customerBatch !== undefined && group.customerBatch !== null
             ? { customerBatch: group.customerBatch }
             : { customerProgram: group.customerProgram ?? "" }),
@@ -360,14 +402,35 @@ async function loadAudienceSummary(filter: AudienceFilter): Promise<{
         : "Tanpa jurusan",
   }));
 
+  // Cari yang terlaris (top) dan paling sepi (bottom)
+  const sortedBatchByOrders = [...byBatch].sort((a, b) => b.orders - a.orders);
+  const topBatch = sortedBatchByOrders.length > 0 ? sortedBatchByOrders[0] : null;
+  const bottomBatch = sortedBatchByOrders.length > 0 ? sortedBatchByOrders[sortedBatchByOrders.length - 1] : null;
+
+  const sortedProgramByOrders = [...byProgram].sort((a, b) => b.orders - a.orders);
+  const topProgram = sortedProgramByOrders.length > 0 ? sortedProgramByOrders[0] : null;
+  const bottomProgram = sortedProgramByOrders.length > 0 ? sortedProgramByOrders[sortedProgramByOrders.length - 1] : null;
+
   byBatch.sort((a, b) => a.orders - b.orders || a.label.localeCompare(b.label));
   byProgram.sort((a, b) => a.orders - b.orders || a.label.localeCompare(b.label));
 
+  const totalOrders = byBatch.reduce((sum, row) => sum + row.orders, 0);
+  const totalRevenue = byBatch.reduce((sum, row) => sum + row.revenue, 0);
+  const totalItems = overallItemsAgg._sum?.quantity ?? 0;
+
   return {
     periods,
+    availableBatches,
+    availablePrograms,
     byBatch,
     byProgram,
-    totalOrders: byBatch.reduce((sum, row) => sum + row.orders, 0),
+    totalOrders,
+    totalItems,
+    totalRevenue,
+    topBatch,
+    bottomBatch,
+    topProgram,
+    bottomProgram,
   };
 }
 
@@ -396,6 +459,8 @@ export default async function AdminDashboardPage({
     periodId: firstParam(params.po).trim(),
     customerType:
       tipeParam === "MAHASISWA" || tipeParam === "ALUMNI" ? tipeParam : "",
+    batch: firstParam(params.angkatan).trim(),
+    program: firstParam(params.jurusan).trim(),
   };
 
   const now = new Date();
@@ -663,8 +728,7 @@ export default async function AdminDashboardPage({
                 Pemesanan per Angkatan & Jurusan
               </h2>
               <p className="text-sm text-cream-muted">
-                Pesanan lunas (Dibayar / Diproses / Selesai). Diurut dari yang
-                paling sepi — pakai sebagai bahan promosi terarah.
+                Pesanan lunas (Dibayar / Diproses / Selesai) untuk analisis segmentasi pemesan.
               </p>
             </div>
             <form method="get" action="/admin" className="flex flex-wrap items-center gap-2">
@@ -684,6 +748,41 @@ export default async function AdminDashboardPage({
                   </option>
                 ))}
               </select>
+
+              <label htmlFor="filter-angkatan" className="sr-only">
+                Angkatan
+              </label>
+              <select
+                id="filter-angkatan"
+                name="angkatan"
+                defaultValue={audienceFilter.batch}
+                className="h-9 rounded-lg border border-white/10 bg-coal px-2.5 text-sm text-[#D8D3C7]"
+              >
+                <option value="">Semua angkatan</option>
+                {audience.availableBatches.map((batch) => (
+                  <option key={batch} value={batch}>
+                    Angkatan {batch}
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor="filter-jurusan" className="sr-only">
+                Jurusan
+              </label>
+              <select
+                id="filter-jurusan"
+                name="jurusan"
+                defaultValue={audienceFilter.program}
+                className="h-9 max-w-[200px] truncate rounded-lg border border-white/10 bg-coal px-2.5 text-sm text-[#D8D3C7]"
+              >
+                <option value="">Semua jurusan</option>
+                {audience.availablePrograms.map((program) => (
+                  <option key={program} value={program}>
+                    {program}
+                  </option>
+                ))}
+              </select>
+
               <label htmlFor="filter-tipe" className="sr-only">
                 Tipe pembeli
               </label>
@@ -693,17 +792,84 @@ export default async function AdminDashboardPage({
                 defaultValue={audienceFilter.customerType}
                 className="h-9 rounded-lg border border-white/10 bg-coal px-2.5 text-sm text-[#D8D3C7]"
               >
-                <option value="">Mahasiswa + Alumni</option>
+                <option value="">Semua tipe</option>
                 <option value="MAHASISWA">Mahasiswa</option>
                 <option value="ALUMNI">Alumni</option>
               </select>
+
               <button
                 type="submit"
                 className="h-9 rounded-lg bg-gold px-3.5 text-sm font-medium text-obsidian hover:bg-gold-light"
               >
                 Tampilkan
               </button>
+              {(audienceFilter.periodId || audienceFilter.batch || audienceFilter.program || audienceFilter.customerType) && (
+                <Link
+                  href="/admin"
+                  className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-coal px-3 text-xs font-medium text-cream-muted hover:text-cream"
+                >
+                  Reset
+                </Link>
+              )}
             </form>
+          </div>
+
+          {/* 3 Kartu Metrik Ringkasan (Total, Paling Banyak, Paling Sedikit) */}
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-coal p-3.5">
+              <span className="text-xs font-medium text-cream-muted">Total Pesanan Terfilter</span>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="font-mono text-2xl font-bold text-cream">
+                  {formatNumber(audience.totalOrders)}
+                </span>
+                <span className="text-xs text-cream-muted">
+                  ({formatNumber(audience.totalItems)} item · {formatRupiah(audience.totalRevenue)})
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-[#8A8A8A]">
+                {audienceFilter.batch || audienceFilter.program
+                  ? `Filter: ${[audienceFilter.batch ? `Angkatan ${audienceFilter.batch}` : null, audienceFilter.program].filter(Boolean).join(" · ")}`
+                  : "Akumulasi seluruh angkatan & jurusan"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-500/20 bg-coal p-3.5">
+              <span className="text-xs font-medium text-emerald-400">🏆 Paling Banyak Pesan</span>
+              <div className="mt-1">
+                <p className="truncate font-semibold text-cream">
+                  {audience.topBatch ? audience.topBatch.label : "-"}
+                </p>
+                <p className="text-xs text-cream-muted">
+                  {audience.topBatch
+                    ? `${formatNumber(audience.topBatch.orders)} order (${formatNumber(audience.topBatch.items)} item)`
+                    : "Belum ada data"}
+                  {audience.topProgram && (
+                    <span className="block truncate text-[11px] text-[#A39E93]">
+                      Jurusan: {audience.topProgram.label} ({formatNumber(audience.topProgram.orders)} order)
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/20 bg-coal p-3.5">
+              <span className="text-xs font-medium text-amber-400">⚠️ Paling Sedikit Pesan</span>
+              <div className="mt-1">
+                <p className="truncate font-semibold text-cream">
+                  {audience.bottomBatch ? audience.bottomBatch.label : "-"}
+                </p>
+                <p className="text-xs text-cream-muted">
+                  {audience.bottomBatch
+                    ? `${formatNumber(audience.bottomBatch.orders)} order (${formatNumber(audience.bottomBatch.items)} item)`
+                    : "Belum ada data"}
+                  {audience.bottomProgram && (
+                    <span className="block truncate text-[11px] text-[#A39E93]">
+                      Jurusan: {audience.bottomProgram.label} ({formatNumber(audience.bottomProgram.orders)} order)
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
 
           {audience.totalOrders === 0 ? (
@@ -713,7 +879,7 @@ export default async function AdminDashboardPage({
                 Belum ada pesanan lunas pada filter ini
               </p>
               <p className="mt-1 text-sm text-cream-muted">
-                Coba ubah periode atau tipe pembeli di atas.
+                Coba sesuaikan filter periode, angkatan, jurusan, atau tipe pembeli di atas.
               </p>
             </div>
           ) : (

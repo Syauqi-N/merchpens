@@ -351,9 +351,15 @@ export function CheckoutForm({
                   name="customerBatch"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      items={master.angkatan.map((year) => ({ value: year, label: year }))}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger id="customerBatch" className="h-10 w-full">
-                        <SelectValue placeholder="Pilih angkatan" />
+                        <SelectValue placeholder="Pilih angkatan">
+                          {field.value || undefined}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {master.angkatan.map((year) => (
@@ -376,9 +382,15 @@ export function CheckoutForm({
                   name="customerProgram"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      items={master.jurusan.map((major) => ({ value: major, label: major }))}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger id="customerProgram" className="h-10 w-full">
-                        <SelectValue placeholder="Pilih jurusan" />
+                        <SelectValue placeholder="Pilih jurusan">
+                          {field.value || undefined}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {master.jurusan.map((major) => (

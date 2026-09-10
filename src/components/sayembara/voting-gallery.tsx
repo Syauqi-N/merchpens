@@ -265,9 +265,9 @@ export function VotingGallery({
                         prev === 0 ? activeImages.length - 1 : prev - 1
                       )
                     }
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-obsidian/80 text-cream border border-white/20 hover:bg-gold hover:text-obsidian transition-colors shadow-lg"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-gold hover:scale-110 active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                   >
-                    <ChevronLeftIcon className="size-5" />
+                    <ChevronLeftIcon className="size-8 stroke-[2.5]" />
                   </button>
 
                   <button
@@ -278,9 +278,9 @@ export function VotingGallery({
                         prev === activeImages.length - 1 ? 0 : prev + 1
                       )
                     }
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-obsidian/80 text-cream border border-white/20 hover:bg-gold hover:text-obsidian transition-colors shadow-lg"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-gold hover:scale-110 active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                   >
-                    <ChevronRightIcon className="size-5" />
+                    <ChevronRightIcon className="size-8 stroke-[2.5]" />
                   </button>
 
                   {/* Indicator Dots & Page Label */}

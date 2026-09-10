@@ -191,38 +191,6 @@ export function VariantFormDialog({
             </FormField>
 
             <FormField
-              label="Desain"
-              htmlFor={mode === "create" ? "variant-design-new" : `variant-design-${variantId}`}
-              error={errors.design?.message}
-              hint="Contoh: Hitam, Navy, Putih. Boleh dikosongkan."
-            >
-              <Input
-                id={mode === "create" ? "variant-design-new" : `variant-design-${variantId}`}
-                className={inputClass}
-                placeholder="Hitam"
-                aria-invalid={Boolean(errors.design)}
-                {...register("design")}
-              />
-            </FormField>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              label="SKU varian"
-              htmlFor={mode === "create" ? "variant-sku-new" : `variant-sku-${variantId}`}
-              error={errors.sku?.message}
-              hint="Harus unik bila diisi. Boleh dikosongkan."
-            >
-              <Input
-                id={mode === "create" ? "variant-sku-new" : `variant-sku-${variantId}`}
-                className={cn(inputClass, "font-mono text-sm")}
-                placeholder="MCH-L-BLK"
-                aria-invalid={Boolean(errors.sku)}
-                {...register("sku")}
-              />
-            </FormField>
-
-            <FormField
               label="Selisih harga"
               htmlFor={
                 mode === "create" ? "variant-delta-new" : `variant-delta-${variantId}`

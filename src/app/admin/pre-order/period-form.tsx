@@ -323,13 +323,19 @@ export function PeriodForm({
           <div className="grid gap-1.5">
             <Label htmlFor="period-status">Status</Label>
             <Select
+              items={STATUS_VALUES.map((item) => ({
+                value: item,
+                label: PREORDER_STATUS_LABEL[item],
+              }))}
               value={values.status}
               onValueChange={(value) =>
                 setField("status", (value ?? "DRAFT") as PreOrderStatus)
               }
             >
               <SelectTrigger id="period-status" className={cn("h-9 w-full sm:w-64")}>
-                <SelectValue />
+                <SelectValue>
+                  {PREORDER_STATUS_LABEL[values.status]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {STATUS_VALUES.map((item) => (

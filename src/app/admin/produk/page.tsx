@@ -226,8 +226,7 @@ export default async function AdminProductsPage({
               {row.name}
             </Link>
             <p className="truncate text-xs text-cream-muted">
-              {row.brand ? `${row.brand} · ` : ""}
-              {row.sku ?? "tanpa SKU"}
+              {row.brand ?? "Merchandise PENS"}
             </p>
             {row.isFeatured && (
               <Badge className="mt-1 bg-gold/10 text-gold">Unggulan</Badge>

@@ -67,15 +67,25 @@ export const DEFAULT_SETTINGS: Record<SettingKey, string> = {
   social_facebook: "",
   social_tiktok: "",
   social_whatsapp: "",
-  // PLACEHOLDER — ganti dengan daftar resmi saat sudah fix.
-  angkatan_list: JSON.stringify(["2021", "2022", "2023", "2024", "2025"]),
+  // Daftar resmi jurusan di Politeknik Elektronika Negeri Surabaya (PENS)
+  angkatan_list: JSON.stringify(["2020", "2021", "2022", "2023", "2024", "2025", "2026"]),
   jurusan_list: JSON.stringify([
-    "Teknik Elektronika",
-    "Teknik Telekomunikasi",
-    "Teknik Elektro Industri",
-    "Informatika",
-    "Teknik Mekatronika",
-    "Multimedia Broadcasting",
+    "D3 Teknik Elektronika",
+    "D4 Teknik Elektronika",
+    "D3 Teknik Telekomunikasi",
+    "D4 Teknik Telekomunikasi",
+    "D3 Teknik Elektro Industri",
+    "D4 Teknik Elektro Industri",
+    "D3 Teknik Informatika",
+    "D4 Teknik Informatika",
+    "D4 Teknik Komputer",
+    "D3 Teknik Mekatronika",
+    "D4 Teknik Mekatronika",
+    "D4 Sistem Pembangkit Energi",
+    "D3 Multimedia Broadcasting",
+    "D4 Teknologi Rekayasa Multimedia",
+    "D4 Teknologi Game",
+    "D4 Sains Data Terapan",
   ]),
 };
 

@@ -531,12 +531,18 @@ export function QuotaManager({
             <div className="grid gap-1.5">
               <Label className="text-xs text-cream-muted">Produk</Label>
               <Select
+                items={candidates.map((c) => ({
+                  value: c.id,
+                  label: `${c.name} — ${formatRupiah(c.price)} · ${c.variantCount} varian`,
+                }))}
                 value={productId}
                 onValueChange={(value: string | null) => setProductId(value ?? "")}
                 disabled={candidates.length === 0}
               >
                 <SelectTrigger className="h-9 w-full bg-coal">
-                  <SelectValue placeholder="Pilih produk…" />
+                  <SelectValue placeholder="Pilih produk…">
+                    {candidates.find((c) => c.id === productId)?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {candidates.map((candidate) => (

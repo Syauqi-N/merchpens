@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckIcon, XIcon, AlertTriangleIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckIcon, XIcon, AlertTriangleIcon, LoaderCircleIcon } from "lucide-react";
 import { updateSubmissionStatus } from "../actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,33 +18,43 @@ import {
 export function ModerationActions({
   entryId,
   entryTitle,
-  currentStatus,
+  currentStatus: initialStatus,
 }: {
   entryId: string;
   entryTitle: string;
   currentStatus: "PENDING" | "APPROVED" | "REJECTED";
 }) {
+  const router = useRouter();
+  const [status, setStatus] = useState(initialStatus);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function handleApprove() {
     startTransition(async () => {
-      await updateSubmissionStatus(entryId, "APPROVED");
+      const res = await updateSubmissionStatus(entryId, "APPROVED");
+      if (res.success) {
+        setStatus("APPROVED");
+        router.refresh();
+      }
     });
   }
 
   function handleReject() {
     startTransition(async () => {
-      await updateSubmissionStatus(entryId, "REJECTED", rejectReason.trim() || undefined);
-      setRejectOpen(false);
-      setRejectReason("");
+      const res = await updateSubmissionStatus(entryId, "REJECTED", rejectReason.trim() || undefined);
+      if (res.success) {
+        setStatus("REJECTED");
+        setRejectOpen(false);
+        setRejectReason("");
+        router.refresh();
+      }
     });
   }
 
   return (
     <div className="flex items-center gap-2">
-      {currentStatus !== "APPROVED" && (
+      {status !== "APPROVED" && (
         <Button
           type="button"
           size="sm"
@@ -51,12 +62,16 @@ export function ModerationActions({
           onClick={handleApprove}
           className="h-8 bg-emerald-600 px-2.5 text-xs text-white hover:bg-emerald-500 font-semibold"
         >
-          <CheckIcon className="size-3.5 mr-1" />
-          Setujui
+          {isPending ? (
+            <LoaderCircleIcon className="size-3.5 mr-1 animate-spin" />
+          ) : (
+            <CheckIcon className="size-3.5 mr-1" />
+          )}
+          {isPending ? "Memproses..." : "Setujui"}
         </Button>
       )}
 
-      {currentStatus !== "REJECTED" && (
+      {status !== "REJECTED" && (
         <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
           <DialogTrigger
             render={

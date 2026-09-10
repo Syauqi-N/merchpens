@@ -82,25 +82,13 @@ export function VariantManager({ productId, productPrice, variants }: VariantMan
       cell: (row) => (
         <div className="min-w-0">
           <p className="text-sm font-medium text-cream">{row.name}</p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {row.size ? (
+          {row.size && (
+            <div className="mt-1 flex flex-wrap gap-1">
               <Badge className="bg-raise text-[#D8D3C7]">Size {row.size}</Badge>
-            ) : null}
-            {row.design ? (
-              <Badge className="bg-gold/10 text-gold">{row.design}</Badge>
-            ) : null}
-            {!row.size && !row.design && (
-              <span className="text-xs text-[#8A8A8A]">Tanpa size/desain</span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ),
-    },
-    {
-      key: "sku",
-      header: "SKU",
-      className: "font-mono text-xs text-cream-muted",
-      cell: (row) => row.sku ?? <span className="font-sans text-[#8A8A8A]">—</span>,
     },
     {
       key: "harga",

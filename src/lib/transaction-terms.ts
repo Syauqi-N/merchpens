@@ -4,10 +4,10 @@
  * Nilai versi ikut disimpan di Order agar perubahan redaksi pada masa depan
  * tidak menghilangkan jejak aturan yang disetujui pembeli.
  */
-export const CURRENT_TERMS_VERSION = "2026-07-31-v1";
+export const CURRENT_TERMS_VERSION = "2026-09-10-v2";
 
 export const TRANSACTION_TERMS_TITLE =
-  "Syarat dan Ketentuan Transaksi BEM FKG UNAIR";
+  "Syarat dan Ketentuan Transaksi Merchandise BEM PENS";
 
 export type TransactionTermSection = {
   title: string;
@@ -16,43 +16,33 @@ export type TransactionTermSection = {
 
 export const TRANSACTION_TERM_SECTIONS: readonly TransactionTermSection[] = [
   {
-    title: "Pemesanan dan pembayaran",
+    title: "Pemesanan dan Pembayaran",
     items: [
-      "Pembeli wajib memastikan identitas, produk, variasi, dan jumlah barang sudah benar sebelum membuat pesanan.",
-      "Pesanan yang belum dibayar atau belum dikonfirmasi oleh admin dalam waktu 48 jam sejak dibuat akan kedaluwarsa otomatis. Kuota barang kemudian dikembalikan agar dapat dipesan mahasiswa lain.",
-      "Untuk pembayaran melalui Duitku, masa berlaku teknis halaman pembayaran dapat berbeda menurut kanal. Selama batas 48 jam pesanan belum terlewati, pembeli dapat membuat ulang tautan pembayaran melalui halaman detail pesanan.",
-      "Pesanan yang sudah dibayar tidak dapat dibatalkan sepihak. Perubahan atau pembatalan hanya dapat dilakukan setelah berkomunikasi dengan pengurus dan mengikuti keputusan BEM FKG UNAIR.",
-      "Pengurus berhak menghubungi pembeli untuk mengonfirmasi pesanan dengan jumlah yang tidak wajar atau data yang diragukan.",
+      "Pembeli wajib memastikan identitas, pilihan produk, ukuran/varian, dan jumlah barang sudah benar sebelum menyelesaikan pesanan.",
+      "Pesanan yang belum dibayar dalam batas waktu yang ditentukan akan kedaluwarsa secara otomatis dan kuota produk akan dilepaskan kembali ke sistem.",
+      "Pembayaran dilakukan melalui saluran resmi payment gateway (Duitku) yang terintegrasi di website Merch PENS.",
+      "Pesanan yang sudah dibayar tidak dapat dibatalkan secara sepihak. Perubahan atau pembatalan hanya dapat dilakukan melalui konfirmasi ke pengurus/admin BEM PENS.",
+      "Pengurus berhak menghubungi pembeli untuk verifikasi data pemesan apabila ditemukan ketidaksesuaian informasi.",
     ],
   },
   {
-    title: "Pre-order dan pengambilan barang",
+    title: "Sistem Pre-Order dan Pengambilan Barang",
     items: [
-      "Seluruh barang dipesan melalui periode pre-order. Estimasi barang mulai dapat diambil, lokasi, jadwal, dan catatan pengambilan mengikuti informasi pada periode PO masing-masing.",
-      "Estimasi pengambilan dapat berubah karena proses pengadaan atau distributor. Pengurus akan menyampaikan perubahan kepada pembeli melalui kontak yang didaftarkan.",
-      "Barang wajib diambil paling lambat 14 hari setelah pengurus mengirimkan pemberitahuan bahwa barang sudah dapat diambil.",
-      "Barang yang tidak diambil sampai semester berjalan berakhir dapat dinyatakan menjadi milik pihak penjual/pengurus sesuai peraturan transaksi BEM FKG UNAIR.",
-      "Pembeli wajib menunjukkan identitas dan menandatangani bukti pengambilan saat barang diserahkan.",
-      "Pengambilan dapat diwakilkan setelah pemberitahuan kepada pengurus. Penerima wajib menuliskan keterangan “diambilkan oleh” beserta identitasnya pada bukti pengambilan.",
+      "Seluruh produk diproduksi melalui sistem Pre-Order (PO). Estimasi jadwal produksi dan pengambilan mengikuti informasi pada masing-masing batch PO yang dibuka.",
+      "Estimasi tanggal selesai dan pengambilan dapat mengalami penyesuaian tergantung pada proses produksi vendor. Perubahan jadwal akan diinformasikan oleh pengurus melalui kontak terdaftar (WhatsApp/Email).",
+      "Untuk opsi Ambil di Kampus (Pick-up), pengambilan dilakukan di lokasi sekretariat/stand BEM PENS sesuai jadwal operasional yang ditentukan panitia.",
+      "Untuk opsi Pengiriman (Shipped), biaya ongkos kirim disepakati dan dibayarkan secara terpisah melalui konfirmasi WhatsApp admin setelah barang siap dikirim.",
+      "Pembeli wajib menunjukkan bukti pemesanan/invoice resmi dari website saat mengambil barang.",
+      "Pengambilan yang diwakilkan wajib menyertakan bukti invoice asli dan identitas pemesan kepada panitia.",
     ],
   },
   {
-    title: "Pemeriksaan dan komplain",
+    title: "Pemeriksaan Barang dan Komplain",
     items: [
-      "Pembeli wajib memeriksa jumlah dan kondisi barang saat pengambilan. Setelah bukti pengambilan ditandatangani, pengurus tidak bertanggung jawab atas kehilangan atau kerusakan yang terjadi kemudian.",
-      "Komplain atas barang kurang, rusak, atau tidak sesuai wajib disertai video unboxing utuh sejak paket pertama kali dibuka.",
-      "Untuk kerusakan pada pemakaian pertama, pembeli wajib menyertakan video penggunaan pertama yang menunjukkan masalah pada barang.",
-      "Komplain disampaikan paling lambat 14 hari setelah barang diambil. Komplain di luar batas tersebut dapat ditolak.",
-    ],
-  },
-  {
-    title: "Pembayaran melalui cicilan",
-    items: [
-      "Opsi cicilan hanya tersedia pada periode PO yang diaktifkan oleh admin dan harus diajukan melalui tautan WhatsApp resmi yang ditampilkan setelah checkout.",
-      "Nominal uang muka, jumlah termin, tanggal jatuh tempo, dan ketentuan lain ditetapkan berdasarkan kesepakatan pembeli dengan admin.",
-      "Pengajuan cicilan belum dianggap sebagai pembayaran. Pembayaran baru tercatat di website setelah diverifikasi secara manual oleh admin.",
-      "Pembeli wajib melunasi seluruh cicilan sebelum barang dapat diambil.",
-      "Keterlambatan dapat memperoleh masa tenggang paling lama satu minggu. Denda Rp50.000 per bulan hanya berlaku apabila dicantumkan dan disetujui dalam kesepakatan cicilan dengan admin.",
+      "Pembeli wajib memeriksa jumlah dan kondisi fisik merchandise saat serah terima barang.",
+      "Komplain atas barang cacat produksi, ukuran salah kirim oleh panitia, atau jumlah kurang wajib disertai bukti video unboxing utuh tanpa jeda (cut/pause).",
+      "Batas pengajuan komplain atau penukaran barang adalah maksimal 3 (tiga) hari setelah barang diterima/diambil.",
+      "Kerusakan akibat kelalaian pemakaian atau pencucian pribadi di luar instruksi perawatan tidak menjadi tanggung jawab panitia.",
     ],
   },
 ] as const;

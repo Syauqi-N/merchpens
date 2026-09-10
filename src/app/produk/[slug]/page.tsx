@@ -172,7 +172,6 @@ export default async function DetailProdukPage({
     },
     product.brand ? { label: "Merek", value: product.brand } : null,
     { label: "Satuan", value: product.unit },
-    product.sku ? { label: "Kode (SKU)", value: product.sku } : null,
     { label: "Jumlah varian", value: `${product.variants.length} varian` },
     period ? { label: "Periode pre-order", value: period.name } : null,
   ].filter(Boolean) as { label: string; value: string }[];

@@ -364,7 +364,7 @@ export function StoreSettingsForm({
         </div>
       </div>
 
-      <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-xl border border-white/10 bg-white/95 p-3 backdrop-blur">
+      <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-xl border border-white/10 bg-coal/95 p-3 backdrop-blur">
         {isDirty && (
           <p className="mr-auto text-sm text-amber-300">Ada perubahan yang belum disimpan.</p>
         )}

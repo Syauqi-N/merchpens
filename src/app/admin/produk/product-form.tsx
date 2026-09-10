@@ -221,16 +221,6 @@ export function ProductForm({
             </Alert>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="SKU" htmlFor="sku" error={errors.sku?.message} hint="Kode internal, harus unik. Boleh dikosongkan.">
-                <Input
-                  id="sku"
-                  className={cn(inputClass, "font-mono text-sm")}
-                  placeholder="MCH-PDH-001"
-                  aria-invalid={Boolean(errors.sku)}
-                  {...register("sku")}
-                />
-              </FormField>
-
               <FormField label="Merek" htmlFor="brand" error={errors.brand?.message}>
                 <Input
                   id="brand"

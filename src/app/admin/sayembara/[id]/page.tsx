@@ -46,6 +46,15 @@ export default async function AdminSayembaraDetailPage({
 
   const phase = getContestPhase(contest);
   const phaseConfig = CONTEST_PHASE_CONFIG[phase];
+  const isFinished = phase === "FINISHED";
+
+  // Cari karya dengan suara terbanyak yang disetujui
+  const approvedEntries = contest.entries.filter((e) => e.status === "APPROVED");
+  const maxVotes = approvedEntries.length > 0 ? Math.max(...approvedEntries.map((e) => e.voteCount)) : 0;
+  const winnerEntryId =
+    isFinished && maxVotes > 0
+      ? approvedEntries.find((e) => e.voteCount === maxVotes)?.id
+      : null;
 
   return (
     <div className="space-y-8">
@@ -156,7 +165,13 @@ export default async function AdminSayembaraDetailPage({
                       imageUrl={entry.imageUrl}
                       imageUrl2={entry.imageUrl2}
                     />
-                    <div className="pointer-events-none absolute top-3 left-3 z-10">
+                    <div className="pointer-events-none absolute top-3 left-3 z-10 flex flex-wrap gap-1.5">
+                      {entry.id === winnerEntryId && (
+                        <span className="flex items-center gap-1 rounded-full bg-gold px-2.5 py-0.5 text-xs font-bold text-obsidian shadow backdrop-blur-sm">
+                          <TrophyIcon className="size-3.5" />
+                          Pemenang Sayembara
+                        </span>
+                      )}
                       {entry.status === "APPROVED" && (
                         <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 backdrop-blur-sm">
                           Disetujui ✓

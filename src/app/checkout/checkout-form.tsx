@@ -324,7 +324,7 @@ export function CheckoutForm({
                         key={option.value}
                         className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-3.5 transition-colors ${
                           field.value === option.value
-                            ? "border-sky-500 bg-gold/10 ring-2 ring-gold/20"
+                            ? "border-gold bg-gold/10 ring-2 ring-gold/20"
                             : "border-white/10 hover:border-[#3A3A3A]"
                         }`}
                       >
@@ -448,7 +448,7 @@ export function CheckoutForm({
                   <label
                     className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors ${
                       field.value === "PICKUP"
-                        ? "border-sky-500 bg-gold/10 ring-2 ring-gold/20"
+                        ? "border-gold bg-gold/10 ring-2 ring-gold/20"
                         : "border-white/10 hover:border-[#3A3A3A]"
                     }`}
                   >
@@ -467,7 +467,7 @@ export function CheckoutForm({
                   <label
                     className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors ${
                       field.value === "SHIPPED"
-                        ? "border-sky-500 bg-gold/10 ring-2 ring-gold/20"
+                        ? "border-gold bg-gold/10 ring-2 ring-gold/20"
                         : "border-white/10 hover:border-[#3A3A3A]"
                     }`}
                   >

@@ -194,6 +194,7 @@ export default async function EditPreOrderPeriodPage({
     pickupSchedule: period.pickupSchedule ?? pickupDefaults.schedule,
     pickupNote: period.pickupNote ?? pickupDefaults.note,
     shippingNote: period.shippingNote ?? "",
+    whatsappGroupUrl: period.whatsappGroupUrl ?? "",
     status: period.status,
   };
 

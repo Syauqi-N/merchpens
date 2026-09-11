@@ -287,6 +287,21 @@ export function StoreSettingsForm({
             </FormField>
 
             <FormField
+              label="Tautan Grup WhatsApp Pembeli"
+              htmlFor="whatsapp_group_url"
+              error={errors.whatsapp_group_url?.message}
+              hint="Tautan undangan grup WA (mis. https://chat.whatsapp.com/xxx). Ditampilkan ke pembeli setelah pembayaran berhasil."
+            >
+              <Input
+                id="whatsapp_group_url"
+                className={inputClass}
+                placeholder="https://chat.whatsapp.com/..."
+                aria-invalid={Boolean(errors.whatsapp_group_url)}
+                {...register("whatsapp_group_url")}
+              />
+            </FormField>
+
+            <FormField
               label="Instagram"
               htmlFor="social_instagram"
               error={errors.social_instagram?.message}

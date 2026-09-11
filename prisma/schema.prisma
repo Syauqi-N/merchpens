@@ -230,6 +230,9 @@ model PreOrderPeriod {
   /// Ongkir tetap manual via WA — bukan angka di sini.
   shippingNote String @default("")
 
+  /// Tautan undangan grup WhatsApp khusus untuk periode PO ini (opsional).
+  whatsappGroupUrl String?
+
   items     PreOrderItem[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt

@@ -125,6 +125,7 @@ export async function createPeriod(input: unknown): Promise<PeriodResult> {
     pickupSchedule,
     pickupNote,
     shippingNote,
+    whatsappGroupUrl,
     status,
   } = parsed.data;
 
@@ -149,6 +150,7 @@ export async function createPeriod(input: unknown): Promise<PeriodResult> {
         pickupSchedule,
         pickupNote: pickupNote || "",
         shippingNote: shippingNote || "",
+        whatsappGroupUrl: whatsappGroupUrl || null,
         status,
         closedAt: status === "CLOSED" ? now : null,
       },
@@ -200,6 +202,7 @@ export async function updatePeriod(input: unknown): Promise<PeriodResult> {
     pickupSchedule,
     pickupNote,
     shippingNote,
+    whatsappGroupUrl,
     status,
   } = values;
 
@@ -233,6 +236,7 @@ export async function updatePeriod(input: unknown): Promise<PeriodResult> {
           pickupSchedule,
           pickupNote: pickupNote || "",
           shippingNote: shippingNote || "",
+          whatsappGroupUrl: whatsappGroupUrl || null,
           status,
           closedAt: status === "CLOSED" ? (existing.closedAt ?? now) : null,
         },

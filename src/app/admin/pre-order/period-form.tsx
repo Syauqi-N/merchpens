@@ -42,6 +42,7 @@ export type PeriodFormValues = {
   pickupSchedule: string;
   pickupNote: string;
   shippingNote: string;
+  whatsappGroupUrl: string;
   status: PreOrderStatus;
 };
 
@@ -317,6 +318,23 @@ export function PeriodForm({
                 Ongkir tetap dibayar manual via WhatsApp admin — tulis petunjuknya di sini.
               </p>
               <FieldError message={errors.shippingNote} />
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor="period-whatsapp-group-url">
+                Tautan Grup WhatsApp PO (opsional)
+              </Label>
+              <Input
+                id="period-whatsapp-group-url"
+                value={values.whatsappGroupUrl}
+                onChange={(event) => setField("whatsappGroupUrl", event.target.value)}
+                placeholder="https://chat.whatsapp.com/..."
+                aria-invalid={Boolean(errors.whatsappGroupUrl)}
+              />
+              <p className="text-xs text-cream-muted">
+                Tautan grup WA khusus batch ini. Otomatis tampil ke customer setelah pembayaran berhasil.
+              </p>
+              <FieldError message={errors.whatsappGroupUrl} />
             </div>
           </section>
 

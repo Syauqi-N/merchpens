@@ -93,7 +93,7 @@ export function VariantPicker({
                 className={cn(
                   "rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "border-sky-500 bg-gold/10 text-gold-light ring-2 ring-gold/20"
+                    ? "border-gold bg-gold/10 text-gold-light ring-2 ring-gold/20"
                     : "border-white/10 bg-coal text-[#D8D3C7] hover:border-[#3A3A3A]",
                   !variant.canOrder && "cursor-not-allowed opacity-50",
                 )}

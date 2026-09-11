@@ -6,6 +6,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { MobileFloatingCart } from "@/components/cart/mobile-floating-cart";
 import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
@@ -86,6 +87,8 @@ export default async function RootLayout({
           <main id="konten-utama" className="flex-1">
             {children}
           </main>
+
+          <MobileFloatingCart />
 
           <SiteFooter />
 

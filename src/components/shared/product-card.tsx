@@ -116,7 +116,7 @@ export function ProductCard({
 
         {/* Overlay saat tidak bisa dipesan */}
         {!canOrder && (
-          <div className="absolute inset-0 grid place-items-center bg-white/70">
+          <div className="absolute inset-0 grid place-items-center bg-obsidian/75 backdrop-blur-[2px]">
             <Badge variant="destructive" className="bg-red-600 text-white shadow-sm">
               Tidak tersedia
             </Badge>

@@ -39,7 +39,7 @@ export function SortSelect({
   return (
     <label
       className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-coal pr-1 pl-2.5 text-sm text-cream-muted focus-within:border-sky-500 focus-within:ring-3 focus-within:ring-gold/50/25",
+        "inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-coal pr-1 pl-2.5 text-sm text-cream-muted focus-within:border-gold focus-within:ring-3 focus-within:ring-gold/20",
         className,
       )}
     >
@@ -57,7 +57,7 @@ export function SortSelect({
           if (!next) return;
           startTransition(() => router.push(next.href, { scroll: false }));
         }}
-        className="h-full cursor-pointer appearance-none rounded-md bg-transparent py-0 pr-6 pl-1 text-sm font-medium text-cream outline-none"
+        className="h-full cursor-pointer appearance-none rounded-md bg-transparent py-0 pr-6 pl-1 text-sm font-medium text-cream outline-none [color-scheme:dark]"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>\")",
@@ -67,7 +67,11 @@ export function SortSelect({
         }}
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option
+            key={option.value}
+            value={option.value}
+            className="bg-coal text-cream"
+          >
             {option.label}
           </option>
         ))}

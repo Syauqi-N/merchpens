@@ -117,13 +117,13 @@ export async function GET(request: Request) {
     body { margin: 0; background: #e2e8f0; color: #0f172a; font-family: Arial, sans-serif; }
     .toolbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 18px; background: #0f172a; color: white; }
     .toolbar p { margin: 0; font-size: 13px; }
-    .toolbar button { border: 0; border-radius: 8px; background: #0284c7; color: white; padding: 9px 14px; font-weight: 700; cursor: pointer; }
+    .toolbar button { border: 0; border-radius: 8px; background: #d4a359; color: #0d0d0d; padding: 9px 14px; font-weight: 700; cursor: pointer; }
     .receipt { width: 148mm; min-height: 210mm; margin: 12px auto; padding: 9mm; background: white; page-break-after: always; break-after: page; }
     .receipt:last-child { page-break-after: auto; break-after: auto; }
-    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10mm; border-bottom: 2px solid #0369a1; padding-bottom: 4mm; }
-    .brand { width: 43mm; height: auto; }
+    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10mm; border-bottom: 2px solid #d4a359; padding-bottom: 4mm; }
+    .brand { width: 48mm; height: auto; }
     h1 { margin: 0; font-size: 14pt; }
-    h2 { margin: 4mm 0 2mm; font-size: 9pt; text-transform: uppercase; letter-spacing: .05em; color: #0369a1; }
+    h2 { margin: 4mm 0 2mm; font-size: 9pt; text-transform: uppercase; letter-spacing: .05em; color: #9e7638; }
     p { margin: 0; }
     .muted { color: #475569; }
     .small { font-size: 7.5pt; }
@@ -133,9 +133,9 @@ export async function GET(request: Request) {
     .row span:last-child { text-align: right; font-weight: 700; }
     table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
     th, td { border: 1px solid #cbd5e1; padding: 1.2mm 1.5mm; text-align: left; vertical-align: top; }
-    th { background: #e0f2fe; }
+    th { background: #fef7ed; color: #9e7638; }
     .right { text-align: right; }
-    .pickup { border: 1px solid #bae6fd; background: #f0f9ff; border-radius: 2mm; padding: 2.5mm; font-size: 7.5pt; }
+    .pickup { border: 1px solid #fed7aa; background: #fffaf5; border-radius: 2mm; padding: 2.5mm; font-size: 7.5pt; }
     .pickup + .pickup { margin-top: 2mm; }
     .address { border: 1px solid #fcd34d; background: #fffbeb; border-radius: 2mm; padding: 2.5mm; font-size: 7.5pt; }
     .checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 8mm; font-size: 7.5pt; }
@@ -368,7 +368,7 @@ function renderPaginatedReceipt(order: ReceiptOrder, orderIndex: number): string
           <p class="small muted">Halaman ${pageNum} dari ${totalPages}</p>
           <p class="small muted">${formatDateTime(order.createdAt)}</p>
         </div>
-        <div style="text-align:center; font-size:14pt; color:#0369a1;">
+        <div style="text-align:center; font-size:14pt; color:#9e7638;">
           <strong>Lanjutan Halaman Sebelumnya</strong>
         </div>
       </header>

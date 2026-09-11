@@ -125,7 +125,7 @@ export function CatalogToolbar({
             defaultValue={query.q ?? ""}
             placeholder="Cari nama alat, merek, atau kode…"
             aria-label="Cari produk"
-            className="h-9 w-full rounded-lg border border-white/10 bg-coal pr-3 pl-9 text-sm text-cream outline-none placeholder:text-[#8A8A8A] focus:border-sky-500 focus:ring-3 focus:ring-gold/50/25"
+            className="h-9 w-full rounded-lg border border-white/10 bg-coal pr-3 pl-9 text-sm text-cream outline-none placeholder:text-[#8A8A8A] focus:border-gold focus:ring-3 focus:ring-gold/20"
           />
           <button type="submit" className="sr-only">
             Cari

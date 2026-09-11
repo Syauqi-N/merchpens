@@ -39,6 +39,7 @@ export const SETTING_KEYS = [
   "social_facebook",
   "social_tiktok",
   "social_whatsapp",
+  "whatsapp_group_url",
   "angkatan_list",
   "jurusan_list",
 ] as const;
@@ -67,6 +68,7 @@ export const DEFAULT_SETTINGS: Record<SettingKey, string> = {
   social_facebook: "",
   social_tiktok: "",
   social_whatsapp: "",
+  whatsapp_group_url: "",
   // Daftar resmi jurusan di Politeknik Elektronika Negeri Surabaya (PENS)
   angkatan_list: JSON.stringify(["2020", "2021", "2022", "2023", "2024", "2025", "2026"]),
   jurusan_list: JSON.stringify([

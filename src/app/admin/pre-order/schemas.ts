@@ -116,6 +116,19 @@ export const periodFormSchema = z
       .max(500, "Catatan pengiriman maksimal 500 karakter")
       .optional()
       .default(""),
+    whatsappGroupUrl: z
+      .string()
+      .trim()
+      .max(200, "Tautan grup WhatsApp maksimal 200 karakter")
+      .optional()
+      .default("")
+      .refine(
+        (value) =>
+          !value ||
+          value.startsWith("https://chat.whatsapp.com/") ||
+          value.startsWith("https://wa.me/"),
+        "Tautan grup WhatsApp harus diawali https://chat.whatsapp.com/ atau https://wa.me/",
+      ),
     status: z.enum(["DRAFT", "ACTIVE", "CLOSED"]),
   })
   .refine((data) => data.endAt > data.startAt, {

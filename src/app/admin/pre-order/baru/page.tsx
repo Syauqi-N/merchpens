@@ -4,7 +4,7 @@ import { ArrowLeftIcon, InfoIcon } from "lucide-react";
 
 import { ensurePageCapability } from "@/components/admin/guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getPickupDefaults } from "@/lib/settings";
+import { getPickupDefaults, getSettings } from "@/lib/settings";
 
 import { PeriodForm, type PeriodFormValues } from "../period-form";
 import { toDateTimeLocalValue } from "../schemas";
@@ -21,7 +21,7 @@ export default async function NewPreOrderPeriodPage() {
   const start = new Date();
   start.setSeconds(0, 0);
   const end = new Date(start.getTime() + 14 * HARI);
-  const pickup = await getPickupDefaults();
+  const [pickup, settings] = await Promise.all([getPickupDefaults(), getSettings()]);
   const estimatedPickupAt = new Date(end.getTime() + pickup.leadDays * HARI);
 
   const initial: PeriodFormValues = {
@@ -35,6 +35,7 @@ export default async function NewPreOrderPeriodPage() {
     pickupSchedule: pickup.schedule,
     pickupNote: pickup.note,
     shippingNote: "",
+    whatsappGroupUrl: settings.whatsapp_group_url ?? "",
     status: "DRAFT",
   };
 

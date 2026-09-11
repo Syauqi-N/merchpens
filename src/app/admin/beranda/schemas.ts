@@ -137,6 +137,8 @@ export const storeSettingsSchema = z.object({
       "Nomor WhatsApp hanya boleh berisi angka dan tanda + - ( )",
     ),
 
+  whatsapp_group_url: optionalUrl("Tautan Grup WhatsApp"),
+
   angkatan_list: masterListText("Angkatan"),
   jurusan_list: masterListText("Jurusan"),
 });
@@ -210,6 +212,7 @@ export const STORE_SETTING_KEYS = [
   "social_facebook",
   "social_tiktok",
   "social_whatsapp",
+  "whatsapp_group_url",
   "angkatan_list",
   "jurusan_list",
 ] as const satisfies readonly (keyof StoreSettingsValues)[];

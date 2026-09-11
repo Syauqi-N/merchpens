@@ -11,6 +11,7 @@ import {
   StoreIcon,
   TimerOffIcon,
   TruckIcon,
+  UsersIcon,
 } from "lucide-react";
 
 import {
@@ -190,6 +191,7 @@ export default async function CheckoutSelesaiPage({
                   pickupSchedule: true,
                   pickupNote: true,
                   shippingNote: true,
+                  whatsappGroupUrl: true,
                 },
               },
             },
@@ -241,6 +243,15 @@ export default async function CheckoutSelesaiPage({
         ]),
     ).values(),
   ];
+
+  // Prioritaskan link grup WA dari batch/periode PO yang dibeli;
+  // jika kosong, gunakan link grup WA default dari pengaturan toko.
+  const periodWithGroup = pickupPeriods.find((p) => Boolean(p.whatsappGroupUrl?.trim()));
+  const activeWhatsappGroupUrl =
+    periodWithGroup?.whatsappGroupUrl?.trim() ||
+    settings.whatsapp_group_url?.trim() ||
+    null;
+  const groupPeriodName = periodWithGroup?.name ?? null;
 
   return (
     <Shell>
@@ -310,6 +321,35 @@ export default async function CheckoutSelesaiPage({
                 Halaman pembayaran melaporkan sukses, namun konfirmasi resmi dari Duitku
                 belum kami terima. Status akan otomatis berubah begitu konfirmasi masuk —
                 muat ulang halaman ini beberapa saat lagi.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isPaid && Boolean(activeWhatsappGroupUrl) && (
+            <Alert className="border-emerald-500/40 bg-emerald-500/10 text-emerald-100">
+              <UsersIcon className="size-5 text-emerald-400" aria-hidden />
+              <AlertTitle className="text-base font-semibold text-emerald-300">
+                Grup WhatsApp Pembeli{groupPeriodName ? ` (${groupPeriodName})` : ""}
+              </AlertTitle>
+              <AlertDescription className="mt-1.5 space-y-3 text-sm text-emerald-200/90">
+                <p>
+                  Gabung ke grup WhatsApp pembeli untuk mendapatkan informasi
+                  terkini seputar progres produksi, jadwal pengambilan, dan pengiriman.
+                </p>
+                <Button
+                  nativeButton={false}
+                  render={
+                    <a
+                      href={activeWhatsappGroupUrl!}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    />
+                  }
+                  className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+                >
+                  <MessageCircleIcon className="size-4" aria-hidden />
+                  Gabung Grup WhatsApp
+                </Button>
               </AlertDescription>
             </Alert>
           )}

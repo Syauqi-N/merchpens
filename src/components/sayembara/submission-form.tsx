@@ -44,10 +44,12 @@ export function SubmissionForm({
   contestId,
   isLoggedIn,
   userEntry = null,
+  contestSlug,
 }: {
   contestId: string;
   isLoggedIn: boolean;
   userEntry?: UserContestEntry | null;
+  contestSlug?: string;
 }) {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function SubmissionForm({
         </p>
         <div className="mt-6">
           <Link
-            href="/masuk?callbackUrl=/sayembara"
+            href={`/masuk?callbackUrl=${encodeURIComponent(contestSlug ? `/sayembara/${contestSlug}` : "/sayembara")}`}
             className="inline-flex items-center justify-center rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-obsidian hover:bg-gold-light transition-colors"
           >
             Masuk ke Akun

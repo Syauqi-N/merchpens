@@ -92,7 +92,7 @@ export default async function AdminSayembaraDetailPage({
             </Link>
 
             <Link
-              href={`/sayembara?slug=${contest.slug}`}
+              href={`/sayembara/${contest.slug}`}
               target="_blank"
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-obsidian px-3 py-2 text-xs font-semibold text-cream hover:border-gold/50 hover:text-gold"
             >

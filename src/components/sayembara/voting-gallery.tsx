@@ -34,12 +34,14 @@ export function VotingGallery({
   userVotedEntryId,
   isLoggedIn,
   isFinished = false,
+  contestSlug,
 }: {
   contestId: string;
   entries: EntryItem[];
   userVotedEntryId: string | null;
   isLoggedIn: boolean;
   isFinished?: boolean;
+  contestSlug?: string;
 }) {
   const router = useRouter();
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(userVotedEntryId);
@@ -55,7 +57,7 @@ export function VotingGallery({
 
   function handleVote(entryId: string) {
     if (!isLoggedIn) {
-      router.push("/masuk?callbackUrl=/sayembara");
+      router.push(`/masuk?callbackUrl=${encodeURIComponent(contestSlug ? `/sayembara/${contestSlug}` : "/sayembara")}`);
       return;
     }
     if (selectedEntryId) return;

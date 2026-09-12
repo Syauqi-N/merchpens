@@ -1,318 +1,315 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { AwardIcon, CalendarIcon, SparklesIcon } from "lucide-react";
+import Image from "next/image";
+import {
+  ArrowRightIcon,
+  AwardIcon,
+  CalendarDaysIcon,
+  CheckCircle2Icon,
+  LayersIcon,
+  SparklesIcon,
+  TrophyIcon,
+  UsersIcon,
+  VoteIcon,
+} from "lucide-react";
 
-import { auth } from "@/lib/auth";
+import { EmptyState } from "@/components/shared/empty-state";
+import { SectionHeading } from "@/components/storefront/section-heading";
 import { prisma } from "@/lib/prisma";
-import { getContestPhase, CONTEST_PHASE_CONFIG } from "@/lib/contest";
-import { ContestTimelineTracker } from "@/components/sayembara/contest-timeline";
-import { VotingGallery } from "@/components/sayembara/voting-gallery";
-import { SubmissionForm } from "@/components/sayembara/submission-form";
 import { formatDate } from "@/lib/format";
+import { getContestPhase, CONTEST_PHASE_CONFIG } from "@/lib/contest";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Sayembara & Voting Desain Resmi BEM PENS",
+  title: "Sayembara & Voting Desain Merchandise Resmi BEM PENS",
   description:
-    "Ikuti sayembara desain merchandise resmi BEM PENS dan berikan suara voting kamu untuk karya favorit sivitas akademika.",
+    "Daftar sayembara desain merchandise resmi BEM PENS yang sedang dibuka, tahap kurasi, maupun pemungutan suara voting karya favorit.",
 };
 
-export default async function SayembaraPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ slug?: string }>;
-}) {
-  const { slug } = await searchParams;
-  const session = await auth();
-  const userId = session?.user?.id;
+const STEPS = [
+  {
+    icon: SparklesIcon,
+    title: "1. Pilih Sayembara",
+    description:
+      "Pilih sayembara merchandise yang sedang dibuka untuk melihat tema, ketentuan mockup, dan hadiah juara.",
+  },
+  {
+    icon: LayersIcon,
+    title: "2. Kirim Karya Desain",
+    description:
+      "Kirimkan desain terbaikmu (maksimal 2 mockup foto) beserta filosofi konsep karyamu sebelum batas waktu berakhir.",
+  },
+  {
+    icon: CheckCircle2Icon,
+    title: "3. Kurasi Panitia",
+    description:
+      "Karya diperiksa oleh panitia BEM PENS untuk memastikan orisinalitas dan kelayakan teknis sebelum masuk voting publik.",
+  },
+  {
+    icon: VoteIcon,
+    title: "4. Voting Mahasiswa",
+    description:
+      "Gunakan hak suaramu untuk memilih desain terfavorit. Karya pemenang akan diproduksi resmi pada batch Pre-Order!",
+  },
+] as const;
 
-  // 1. Ambil semua sayembara yang berstatus publik
-  const allContests = await prisma.contest.findMany({
+export default async function SayembaraIndexPage() {
+  const now = new Date();
+
+  // Ambil semua sayembara yang tidak berstatus DRAFT
+  const contests = await prisma.contest.findMany({
     where: {
       status: { in: ["PUBLISHED", "ANNOUNCED", "CLOSED"] },
     },
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      status: true,
-      submissionStart: true,
-      submissionEnd: true,
-      votingStart: true,
-      votingEnd: true,
+    include: {
+      _count: {
+        select: {
+          entries: { where: { status: "APPROVED" } },
+          votes: true,
+        },
+      },
     },
   });
 
-  // 2. Tentukan sayembara yang sedang ditampilkan:
-  // Jika ada query ?slug=xyz, tampilkan itu. Jika tidak, pilih yang terbaru.
-  const targetContestMeta =
-    (slug ? allContests.find((c) => c.slug === slug) : allContests[0]) ?? null;
+  const activeContests = contests.filter((c) => {
+    const phase = getContestPhase(c, now);
+    return phase === "SUBMISSION" || phase === "VOTING" || phase === "REVIEW";
+  });
 
-  let contest = null;
-  if (targetContestMeta) {
-    contest = await prisma.contest.findUnique({
-      where: { id: targetContestMeta.id },
-      include: {
-        entries: {
-          where: { status: "APPROVED" },
-          select: {
-            id: true,
-            title: true,
-            designerName: true,
-            department: true,
-            batch: true,
-            description: true,
-            imageUrl: true,
-            imageUrl2: true,
-            voteCount: true,
-          },
-          orderBy: { voteCount: "desc" },
-        },
-      },
-    });
-  }
-
-  if (!contest) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-24 text-center">
-        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
-          <SparklesIcon className="size-7" />
-        </div>
-        <h1 className="text-2xl font-bold text-cream">Belum Ada Sayembara Aktif</h1>
-        <p className="mt-2 text-sm text-cream-muted max-w-md mx-auto">
-          Panitia BEM PENS sedang menyiapkan periode sayembara berikutnya. Silakan pantau kembali berkala!
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-block rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-obsidian hover:bg-gold-light"
-        >
-          Kembali ke Beranda
-        </Link>
-      </div>
-    );
-  }
-
-  const currentPhase = getContestPhase(contest);
-  const phaseInfo = CONTEST_PHASE_CONFIG[currentPhase];
-
-  // Cek apakah user saat ini sudah vote di sayembara ini
-  let userVotedEntryId: string | null = null;
-  let userExistingEntry = null;
-
-  if (userId) {
-    const [existingVote, existingEntry] = await Promise.all([
-      prisma.contestVote.findUnique({
-        where: {
-          contestId_userId: {
-            contestId: contest.id,
-            userId,
-          },
-        },
-        select: { entryId: true },
-      }),
-      prisma.contestEntry.findFirst({
-        where: {
-          contestId: contest.id,
-          userId,
-        },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          designerName: true,
-          department: true,
-          batch: true,
-          description: true,
-          imageUrl: true,
-          status: true,
-          adminNote: true,
-          createdAt: true,
-        },
-      }),
-    ]);
-
-    userVotedEntryId = existingVote?.entryId ?? null;
-    if (existingEntry) {
-      userExistingEntry = {
-        ...existingEntry,
-        createdAt: existingEntry.createdAt.toISOString(),
-      };
-    }
-  }
+  const featuredContest = activeContests[0] ?? contests[0] ?? null;
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-gold/20 bg-obsidian py-12 sm:py-16">
-        <div className="absolute inset-0 opacity-15">
-          <Image
-            src="/brand/bg-batik.webp"
-            alt="Motif Batik"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
+      <section className="relative overflow-hidden bg-obsidian">
+        <div
+          aria-hidden
+          className="bg-batik pointer-events-none absolute inset-0 opacity-70"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 right-0 h-[360px] w-[520px] translate-x-1/4 -translate-y-1/3 rounded-full bg-gold/10 blur-[120px]"
+        />
+        <div
+          aria-hidden
+          className="gold-divider absolute inset-x-0 bottom-0 h-px"
+        />
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/* Baris Selector Sayembara (jika ada lebih dari 1 sayembara) */}
-          {allContests.length > 1 && (
-            <div className="mb-6 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-cream-muted">Pilih Sayembara:</span>
-              <div className="flex flex-wrap gap-1.5">
-                {allContests.map((item) => {
-                  const isCurrent = item.slug === contest.slug;
-                  return (
-                    <Link
-                      key={item.id}
-                      href={`/sayembara?slug=${item.slug}`}
-                      className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-                        isCurrent
-                          ? "bg-gold text-obsidian shadow-sm shadow-gold/20"
-                          : "border border-white/15 bg-white/5 text-cream-muted hover:border-gold/40 hover:text-cream"
-                      }`}
-                    >
-                      {item.title}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
-              <SparklesIcon className="size-3.5" />
-              SAYEMBARA BEM PENS • REFORMASIASA
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-12 sm:py-14 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3.5 py-1 text-[11px] font-bold tracking-[0.22em] text-gold uppercase">
+              <TrophyIcon className="size-3.5" aria-hidden />
+              Sayembara Desain BEM PENS
             </span>
-            <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${phaseInfo.badgeClass}`}
-            >
-              Fase: {phaseInfo.label}
-            </span>
+            <h1 className="font-display mt-4 max-w-3xl text-3xl leading-tight font-extrabold tracking-tight text-cream uppercase sm:text-4xl lg:text-5xl">
+              Suara & Karya Mahasiswa untuk Kampus
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm text-cream-muted sm:text-base leading-relaxed">
+              Wadah kompetisi desain merchandise resmi PENS. Mahasiswa dapat menyalurkan ide kreatif dan seluruh sivitas akademika ikut menentukan karya terbaik lewat pemungutan suara resmi.
+            </p>
+            {activeContests.length > 0 && (
+              <p className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+                {activeContests.length} sayembara sedang berlangsung
+              </p>
+            )}
           </div>
 
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-cream sm:text-4xl lg:text-5xl">
-            {contest.title}
-          </h1>
+          {featuredContest ? (
+            <div className="w-full rounded-3xl border border-gold/30 bg-coal/80 p-5 backdrop-blur-sm sm:p-6">
+              {(() => {
+                const phase = getContestPhase(featuredContest, now);
+                const phaseConfig = CONTEST_PHASE_CONFIG[phase];
+                return (
+                  <>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold tracking-[0.22em] text-gold uppercase">
+                        Sorotan Sayembara
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${phaseConfig.badgeClass}`}
+                      >
+                        {phaseConfig.label}
+                      </span>
+                    </div>
 
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-cream-muted sm:text-base">
-            {contest.description}
-          </p>
+                    <p className="font-display mt-3 text-xl font-extrabold tracking-tight text-cream sm:text-2xl">
+                      {featuredContest.title}
+                    </p>
 
-          {contest.prizeInfo && (
-            <div className="mt-6 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs text-gold">
-              <AwardIcon className="size-4 shrink-0" />
-              <span className="font-semibold">{contest.prizeInfo}</span>
+                    <p className="mt-2 text-xs leading-relaxed text-cream-muted line-clamp-2">
+                      {featuredContest.description}
+                    </p>
+
+                    {featuredContest.prizeInfo && (
+                      <div className="mt-4 flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-xs text-gold">
+                        <AwardIcon className="size-4 shrink-0" />
+                        <span className="font-semibold truncate">
+                          {featuredContest.prizeInfo}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="mt-5 border-t border-white/10 pt-4 flex items-center justify-between">
+                      <div className="text-xs text-cream-muted">
+                        <span className="text-gold font-bold">{featuredContest._count.entries}</span> karya disetujui • <span className="text-gold font-bold">{featuredContest._count.votes}</span> suara
+                      </div>
+
+                      <Link
+                        href={`/sayembara/${featuredContest.slug}`}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2 text-xs font-bold text-obsidian hover:bg-gold-light transition-colors"
+                      >
+                        Buka Sayembara
+                        <ArrowRightIcon className="size-3.5" />
+                      </Link>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-          )}
-
-          {/* Timeline Tracker */}
-          <div className="mt-8">
-            <ContestTimelineTracker currentPhase={currentPhase} />
-          </div>
+          ) : null}
         </div>
       </section>
 
-      {/* Dynamic Content Section Sesuai Timeline */}
-      <main className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:px-8">
-        {/* FASE 1: SUBMISSION */}
-        {currentPhase === "SUBMISSION" && (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-5 space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-coal p-6">
-                <h3 className="text-lg font-bold text-cream mb-3">Ketentuan Sayembara</h3>
-                <div className="text-xs leading-relaxed text-cream-muted whitespace-pre-line">
-                  {contest.rules ?? "Ikuti panduan desain resmi kampus perjuangan."}
-                </div>
-              </div>
+      {/* Alur Sayembara */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:py-12">
+        <SectionHeading
+          number="01"
+          eyebrow="Alur"
+          title="Cara Mengikuti Sayembara"
+          description="Kirimkan desainmu atau gunakan hak suaramu untuk menentukan merchandise resmi kampus."
+        />
 
-              <div className="rounded-2xl border border-gold/30 bg-gold/5 p-6">
-                <div className="flex items-center gap-2 text-gold font-bold text-sm mb-2">
-                  <CalendarIcon className="size-4" />
-                  Batas Waktu Pengumpulan
-                </div>
-                <p className="text-xs text-cream-muted">
-                  Karya diterima paling lambat{" "}
-                  <strong className="text-cream">{formatDate(contest.submissionEnd)}</strong>.
-                  Setelah itu form submit otomatis ditutup dan masuk tahap kurasi panitia.
+        <ol className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((step) => {
+            const Icon = step.icon;
+            return (
+              <li
+                key={step.title}
+                className="flex flex-col gap-2.5 rounded-2xl border border-white/10 bg-coal p-4"
+              >
+                <span
+                  aria-hidden
+                  className="grid size-10 place-items-center rounded-xl bg-gold/10 text-gold"
+                >
+                  <Icon className="size-5" />
+                </span>
+                <p className="text-sm font-semibold text-cream">{step.title}</p>
+                <p className="text-xs leading-relaxed text-cream-muted">
+                  {step.description}
                 </p>
-              </div>
-            </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
-            <div className="lg:col-span-7">
-              <SubmissionForm
-                contestId={contest.id}
-                isLoggedIn={Boolean(userId)}
-                userEntry={userExistingEntry}
-              />
-            </div>
+      {/* Daftar Sayembara */}
+      <section className="mx-auto w-full max-w-7xl px-4 pb-12 sm:pb-16">
+        <SectionHeading
+          number="02"
+          eyebrow="Sayembara"
+          title="Daftar Sayembara Desain"
+          description="Pilih salah satu sayembara untuk melihat detail karya, mengirim desain, atau memberikan voting suara."
+        />
+
+        {contests.length === 0 ? (
+          <EmptyState
+            icon={<TrophyIcon />}
+            title="Belum ada sayembara yang dibuka"
+            description="Panitia BEM PENS sedang menyiapkan periode sayembara berikutnya. Silakan pantau kembali berkala!"
+            className="mt-6"
+            action={
+              <Link
+                href="/produk"
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-gold px-4 text-sm font-medium text-obsidian transition-colors hover:bg-gold-light"
+              >
+                Lihat katalog produk
+              </Link>
+            }
+          />
+        ) : (
+          <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {contests.map((contest) => {
+              const phase = getContestPhase(contest, now);
+              const phaseConfig = CONTEST_PHASE_CONFIG[phase];
+
+              return (
+                <Link
+                  key={contest.id}
+                  href={`/sayembara/${contest.slug}`}
+                  className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-coal transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                >
+                  <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${phaseConfig.badgeClass}`}
+                      >
+                        {phaseConfig.label}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="grid size-8 shrink-0 place-items-center rounded-full bg-gold/10 text-gold transition-transform group-hover:translate-x-1"
+                      >
+                        <ArrowRightIcon className="size-4" />
+                      </span>
+                    </div>
+
+                    <div>
+                      <h2 className="text-lg font-bold text-cream transition-colors group-hover:text-gold-light line-clamp-1">
+                        {contest.title}
+                      </h2>
+                      <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-cream-muted">
+                        {contest.description}
+                      </p>
+                    </div>
+
+                    {contest.prizeInfo && (
+                      <div className="flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/5 px-3 py-2 text-xs text-gold">
+                        <AwardIcon className="size-4 shrink-0" />
+                        <span className="font-semibold truncate">{contest.prizeInfo}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-xl bg-obsidian p-2.5">
+                        <span className="text-[11px] text-cream-muted block">Pengumpulan</span>
+                        <span className="font-semibold text-cream mt-0.5 block">
+                          s/d {formatDate(contest.submissionEnd)}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-obsidian p-2.5">
+                        <span className="text-[11px] text-cream-muted block">Voting</span>
+                        <span className="font-semibold text-cream mt-0.5 block">
+                          s/d {formatDate(contest.votingEnd)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3 text-xs text-cream-muted">
+                      <span className="inline-flex items-center gap-1">
+                        <UsersIcon className="size-3.5 text-gold" />
+                        {contest._count.entries} karya disetujui
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-semibold text-gold">
+                        <TrophyIcon className="size-3.5" />
+                        {contest._count.votes} suara
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-white/5 bg-obsidian px-5 py-3 text-xs font-bold text-[#D8D3C7] group-hover:text-gold-light sm:px-6">
+                    <span>Masuk ke Sayembara</span>
+                    <ArrowRightIcon className="size-3.5" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
-
-        {/* FASE 2: REVIEW */}
-        {currentPhase === "REVIEW" && (
-          <div className="rounded-2xl border border-blue-500/20 bg-coal p-10 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
-              <SparklesIcon className="size-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-cream">Pengumpulan Karya Telah Berakhir</h2>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-cream-muted">
-              Saat ini dewan juri & panitia BEM PENS sedang melakukan kurasi orisinalitas dan verifikasi teknis karya peserta.
-              Voting mahasiswa akan resmi dibuka pada{" "}
-              <strong className="text-gold">{formatDate(contest.votingStart)}</strong>.
-            </p>
-          </div>
-        )}
-
-        {/* FASE 3: VOTING */}
-        {currentPhase === "VOTING" && (
-          <div>
-            <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <h2 className="text-2xl font-bold text-cream">Galeri Karya & Pemungutan Suara</h2>
-                <p className="mt-1 text-sm text-cream-muted">
-                  Gunakan hak suaramu untuk menentukan desain resmi merchandise Kabinet ReformasiAsa!
-                </p>
-              </div>
-              <div className="text-xs text-gold border border-gold/30 bg-gold/10 px-3 py-1.5 rounded-lg shrink-0">
-                Voting ditutup: {formatDate(contest.votingEnd)}
-              </div>
-            </div>
-
-            <VotingGallery
-              contestId={contest.id}
-              entries={contest.entries}
-              userVotedEntryId={userVotedEntryId}
-              isLoggedIn={Boolean(userId)}
-            />
-          </div>
-        )}
-
-        {/* FASE 4: FINISHED / PENGUMUMAN */}
-        {currentPhase === "FINISHED" && (
-          <div>
-            <div className="mb-8 rounded-2xl border border-gold/40 bg-gold/10 p-6 text-center sm:p-8">
-              <AwardIcon className="mx-auto size-10 text-gold mb-3" />
-              <h2 className="text-2xl font-bold text-cream sm:text-3xl">
-                Voting Resmi Telah Berakhir!
-              </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-cream-muted">
-                Terima kasih atas partisipasi aktif seluruh mahasiswa PENS. Berikut adalah perolehan hasil voting karya desain terbaik.
-              </p>
-            </div>
-
-            <VotingGallery
-              contestId={contest.id}
-              entries={contest.entries}
-              userVotedEntryId={userVotedEntryId}
-              isLoggedIn={Boolean(userId)}
-              isFinished
-            />
-          </div>
-        )}
-      </main>
+      </section>
     </div>
   );
 }

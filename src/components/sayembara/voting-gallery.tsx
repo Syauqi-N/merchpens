@@ -11,6 +11,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   LayersIcon,
+  XIcon,
 } from "lucide-react";
 import { castVote } from "@/app/sayembara/actions";
 import { Button } from "@/components/ui/button";
@@ -105,7 +106,7 @@ export function VotingGallery({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {entries.map((entry, index) => {
           const isVotedByMe = selectedEntryId === entry.id;
           const votePercentage =
@@ -155,14 +156,16 @@ export function VotingGallery({
               </div>
 
               {/* Konten & Identitas Desainer */}
-              <div className="flex flex-1 flex-col p-5">
+              <div className="flex flex-1 flex-col p-4 sm:p-5">
                 <div className="mb-2">
-                  <h3 className="text-lg font-bold text-cream group-hover:text-gold transition-colors">
+                  <h3 className="text-base sm:text-lg font-bold text-cream group-hover:text-gold transition-colors line-clamp-1">
                     {entry.title}
                   </h3>
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-cream-muted">
-                    <UserIcon className="size-3.5 text-gold" />
-                    <span>{entry.designerName}</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-cream-muted">
+                    <span className="inline-flex items-center gap-1">
+                      <UserIcon className="size-3.5 text-gold" />
+                      <span>{entry.designerName}</span>
+                    </span>
                     {entry.department && <span>• {entry.department}</span>}
                     {entry.batch && <span>({entry.batch})</span>}
                   </div>
@@ -172,7 +175,7 @@ export function VotingGallery({
                   {entry.description}
                 </p>
 
-                <div className="mt-5 pt-4 border-t border-white/5 flex flex-col gap-3">
+                <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-2.5 sm:gap-3">
                   {/* Progress Suara: Hanya tampil jika fase FINISHED (selesai). Selama VOTING berlangsung, skor suara di-keep private. */}
                   {isFinished ? (
                     <>
@@ -206,7 +209,7 @@ export function VotingGallery({
                       disabled={isPending || Boolean(selectedEntryId)}
                       onClick={() => handleVote(entry.id)}
                       className={cn(
-                        "mt-2 w-full font-semibold transition-all",
+                        "mt-1 w-full h-11 font-semibold transition-all text-sm",
                         isVotedByMe
                           ? "bg-gold text-obsidian hover:bg-gold-light"
                           : selectedEntryId
@@ -243,137 +246,156 @@ export function VotingGallery({
           onClick={() => setActiveEntry(null)}
         >
           <div
-            className="relative max-h-[96vh] sm:max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/15 bg-coal p-3 sm:p-6 shadow-2xl"
+            className="relative flex flex-col max-h-[96vh] sm:max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/15 bg-coal shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Carousel Container: di mobile aspect-square / min-h, di desktop aspect-16/10 atau h-[55vh] */}
-            <div className="group/carousel relative aspect-square sm:aspect-16/10 sm:h-[55vh] w-full overflow-hidden rounded-xl bg-obsidian border border-white/10">
-              <Image
-                src={activeImages[activeImageIndex] || activeEntry.imageUrl}
-                alt={`${activeEntry.title} - Foto ${activeImageIndex + 1}`}
-                fill
-                className="object-contain p-1.5 sm:p-4 transition-all duration-300"
-                sizes="(max-width: 768px) 100vw, 900px"
-              />
-
-              {/* Kontrol Navigasi Carousel (Jika gambar > 1) */}
-              {activeImages.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="Foto sebelumnya"
-                    onClick={() =>
-                      setActiveImageIndex((prev) =>
-                        prev === 0 ? activeImages.length - 1 : prev - 1
-                      )
-                    }
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-gold hover:scale-110 active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-                  >
-                    <ChevronLeftIcon className="size-8 stroke-[2.5]" />
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Foto berikutnya"
-                    onClick={() =>
-                      setActiveImageIndex((prev) =>
-                        prev === activeImages.length - 1 ? 0 : prev + 1
-                      )
-                    }
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-white/70 hover:text-gold hover:scale-110 active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-                  >
-                    <ChevronRightIcon className="size-8 stroke-[2.5]" />
-                  </button>
-
-                  {/* Indicator Dots & Page Label */}
-                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-obsidian/80 px-3 py-1 border border-white/15 backdrop-blur">
-                    {activeImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setActiveImageIndex(idx)}
-                        aria-label={`Lihat foto ${idx + 1}`}
-                        className={cn(
-                          "size-2 rounded-full transition-all",
-                          activeImageIndex === idx
-                            ? "bg-gold w-5"
-                            : "bg-white/40 hover:bg-white/70"
-                        )}
-                      />
-                    ))}
-                    <span className="ml-1 text-[10px] font-mono text-cream-muted">
-                      {activeImageIndex + 1}/{activeImages.length}
-                    </span>
-                  </div>
-                </>
-              )}
+            {/* Modal Header dengan Tombol Tutup X */}
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
+              <div className="min-w-0 pr-3">
+                <h2 className="text-base sm:text-xl font-bold text-cream truncate">
+                  {activeEntry.title}
+                </h2>
+                <p className="text-xs text-gold truncate">
+                  Karya: {activeEntry.designerName}{" "}
+                  {activeEntry.department ? `• ${activeEntry.department}` : ""}{" "}
+                  {activeEntry.batch ? `(${activeEntry.batch})` : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveEntry(null)}
+                aria-label="Tutup modal"
+                className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-obsidian text-cream-muted hover:border-gold/50 hover:text-gold active:scale-95 transition-all"
+              >
+                <XIcon className="size-5" />
+              </button>
             </div>
 
-            {/* Thumbnail Navigation Bar (Jika 2 foto) */}
-            {activeImages.length > 1 && (
-              <div className="mt-3 flex gap-2">
-                {activeImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={cn(
-                      "relative h-14 w-20 overflow-hidden rounded-lg border bg-obsidian transition-all",
-                      activeImageIndex === idx
-                        ? "border-gold ring-1 ring-gold opacity-100"
-                        : "border-white/10 opacity-60 hover:opacity-100"
-                    )}
-                  >
-                    <Image
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
-                      fill
-                      className="object-contain p-1"
-                    />
-                  </button>
-                ))}
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4">
+              {/* Carousel Container: di mobile aspect-square / min-h, di desktop aspect-16/10 atau h-[50vh] */}
+              <div className="group/carousel relative aspect-square sm:aspect-16/10 sm:h-[50vh] w-full overflow-hidden rounded-xl bg-obsidian border border-white/10">
+                <Image
+                  src={activeImages[activeImageIndex] || activeEntry.imageUrl}
+                  alt={`${activeEntry.title} - Foto ${activeImageIndex + 1}`}
+                  fill
+                  className="object-contain p-2 sm:p-4 transition-all duration-300"
+                  sizes="(max-width: 768px) 100vw, 900px"
+                />
+
+                {/* Kontrol Navigasi Carousel (Jika gambar > 1) */}
+                {activeImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Foto sebelumnya"
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === 0 ? activeImages.length - 1 : prev - 1
+                        )
+                      }
+                      className="absolute left-2 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-obsidian/70 text-white hover:text-gold active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    >
+                      <ChevronLeftIcon className="size-6 stroke-[2.5]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      aria-label="Foto berikutnya"
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === activeImages.length - 1 ? 0 : prev + 1
+                        )
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-full bg-obsidian/70 text-white hover:text-gold active:scale-95 transition-all drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    >
+                      <ChevronRightIcon className="size-6 stroke-[2.5]" />
+                    </button>
+
+                    {/* Indicator Dots & Page Label */}
+                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-obsidian/85 px-3 py-1 border border-white/15 backdrop-blur">
+                      {activeImages.map((_, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setActiveImageIndex(idx)}
+                          aria-label={`Lihat foto ${idx + 1}`}
+                          className={cn(
+                            "size-2 rounded-full transition-all",
+                            activeImageIndex === idx
+                              ? "bg-gold w-5"
+                              : "bg-white/40 hover:bg-white/70"
+                          )}
+                        />
+                      ))}
+                      <span className="ml-1 text-[10px] font-mono text-cream-muted">
+                        {activeImageIndex + 1}/{activeImages.length}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
 
-            {/* Informasi Detail Karya */}
-            <div className="mt-5">
-              <h2 className="text-xl font-bold text-cream">{activeEntry.title}</h2>
-              <p className="mt-1 text-sm text-gold">
-                Karya: {activeEntry.designerName}{" "}
-                {activeEntry.department ? `• ${activeEntry.department}` : ""}{" "}
-                {activeEntry.batch ? `(${activeEntry.batch})` : ""}
-              </p>
+              {/* Thumbnail Navigation Bar (Jika 2 foto) */}
+              {activeImages.length > 1 && (
+                <div className="flex gap-2">
+                  {activeImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={cn(
+                        "relative h-12 w-16 sm:h-14 sm:w-20 overflow-hidden rounded-lg border bg-obsidian transition-all",
+                        activeImageIndex === idx
+                          ? "border-gold ring-1 ring-gold opacity-100"
+                          : "border-white/10 opacity-60 hover:opacity-100"
+                      )}
+                    >
+                      <Image
+                        src={img}
+                        alt={`Thumbnail ${idx + 1}`}
+                        fill
+                        className="object-contain p-1"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              <div className="mt-4 rounded-xl border border-white/5 bg-obsidian/50 p-4">
+              {/* Konsep & Filosofi Desain */}
+              <div className="rounded-xl border border-white/5 bg-obsidian/50 p-3.5 sm:p-4">
                 <h4 className="text-xs font-bold tracking-wider text-cream-muted uppercase">
                   Konsep & Filosofi Desain
                 </h4>
-                <p className="mt-2 text-sm leading-relaxed text-cream-muted whitespace-pre-line">
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-cream-muted whitespace-pre-line">
                   {activeEntry.description}
                 </p>
               </div>
+            </div>
 
-              <div className="mt-6 flex items-center justify-end gap-3">
+            {/* Sticky Action Footer pada Mobile & Desktop */}
+            <div className="border-t border-white/10 bg-obsidian/90 px-4 py-3 sm:px-6 flex items-center justify-end gap-2.5 backdrop-blur">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveEntry(null)}
+                className="h-10 border-white/15 text-cream hover:bg-white/5 px-4"
+              >
+                Tutup
+              </Button>
+              {!isFinished && (
                 <Button
-                  variant="outline"
-                  onClick={() => setActiveEntry(null)}
-                  className="border-white/15 text-cream hover:bg-white/5"
+                  size="sm"
+                  disabled={isPending || Boolean(selectedEntryId)}
+                  onClick={() => {
+                    handleVote(activeEntry.id);
+                    setActiveEntry(null);
+                  }}
+                  className="h-10 bg-gold text-obsidian font-bold hover:bg-gold-light px-5 text-xs sm:text-sm"
                 >
-                  Tutup
+                  {selectedEntryId === activeEntry.id ? "Sudah Kamu Vote" : "Vote Karya Ini"}
                 </Button>
-                {!isFinished && (
-                  <Button
-                    disabled={isPending || Boolean(selectedEntryId)}
-                    onClick={() => {
-                      handleVote(activeEntry.id);
-                      setActiveEntry(null);
-                    }}
-                    className="bg-gold text-obsidian font-bold hover:bg-gold-light"
-                  >
-                    {selectedEntryId === activeEntry.id ? "Sudah Kamu Vote" : "Vote Karya Ini"}
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>

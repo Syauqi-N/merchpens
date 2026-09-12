@@ -108,8 +108,8 @@ export function SubmissionForm({
     const isApproved = userEntry.status === "APPROVED";
 
     return (
-      <div className="rounded-2xl border border-white/10 bg-coal p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-5">
+      <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-8 space-y-5 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4 sm:pb-5">
           <div>
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
@@ -349,15 +349,15 @@ export function SubmissionForm({
         <input type="hidden" {...register("contestId")} />
 
         {/* Judul & Nama Peserta */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="title" className="text-cream font-medium text-xs sm:text-sm">
               Judul Karya Desain *
             </Label>
             <Input
               id="title"
               placeholder="Contoh: Varsity Nusantara PENS 2026"
-              className={`bg-obsidian border-white/15 text-cream h-10 ${
+              className={`bg-obsidian border-white/15 text-cream text-base sm:text-sm h-11 sm:h-10 ${
                 errors.title ? "border-red-500/80 focus:border-red-500" : ""
               }`}
               {...register("title")}
@@ -367,14 +367,14 @@ export function SubmissionForm({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="designerName" className="text-cream font-medium text-xs sm:text-sm">
               Nama Lengkap Peserta *
             </Label>
             <Input
               id="designerName"
               placeholder="Nama kamu / tim"
-              className={`bg-obsidian border-white/15 text-cream h-10 ${
+              className={`bg-obsidian border-white/15 text-cream text-base sm:text-sm h-11 sm:h-10 ${
                 errors.designerName ? "border-red-500/80 focus:border-red-500" : ""
               }`}
               {...register("designerName")}
@@ -386,14 +386,14 @@ export function SubmissionForm({
         </div>
 
         {/* Jurusan (Dropdown) & Angkatan (4 Digit) */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="department" className="text-cream font-medium text-xs sm:text-sm">
               Jurusan / Program Studi *
             </Label>
             <select
               id="department"
-              className={`w-full rounded-xl border border-white/15 bg-obsidian px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none h-10 ${
+              className={`w-full rounded-xl border border-white/15 bg-obsidian px-3 py-2 text-base sm:text-sm text-cream focus:border-gold focus:outline-none h-11 sm:h-10 ${
                 errors.department ? "border-red-500/80 focus:border-red-500" : ""
               }`}
               {...register("department")}
@@ -410,7 +410,7 @@ export function SubmissionForm({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="batch" className="text-cream font-medium text-xs sm:text-sm">
                 Angkatan *
@@ -420,8 +420,10 @@ export function SubmissionForm({
             <Input
               id="batch"
               maxLength={4}
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="Contoh: 2024"
-              className={`bg-obsidian border-white/15 text-cream font-mono text-sm h-10 ${
+              className={`bg-obsidian border-white/15 text-cream font-mono text-base sm:text-sm h-11 sm:h-10 ${
                 errors.batch ? "border-red-500/80 focus:border-red-500" : ""
               }`}
               {...register("batch")}
@@ -435,7 +437,7 @@ export function SubmissionForm({
         </div>
 
         {/* Filosofi Desain dengan Minimal 20 Karakter & Live Counter */}
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="description" className="text-cream font-medium text-xs sm:text-sm">
               Konsep & Filosofi Desain *
@@ -453,7 +455,7 @@ export function SubmissionForm({
             id="description"
             rows={4}
             placeholder="Jelaskan makna di balik motif, komposisi warna, serta filosofi elemen yang kamu gunakan (minimal 20 karakter)..."
-            className={`w-full rounded-xl border border-white/15 bg-obsidian p-3 text-sm text-cream placeholder:text-cream-faint focus:border-gold focus:outline-none ${
+            className={`w-full rounded-xl border border-white/15 bg-obsidian p-3 text-base sm:text-sm text-cream placeholder:text-cream-faint focus:border-gold focus:outline-none ${
               errors.description ? "border-red-500/80 focus:border-red-500" : ""
             }`}
             {...register("description")}
@@ -492,7 +494,7 @@ export function SubmissionForm({
               </div>
 
               <div
-                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-obsidian/50 p-4 text-center transition-colors min-h-[200px] ${
+                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-obsidian/50 p-3 sm:p-4 text-center transition-colors min-h-[160px] sm:min-h-[200px] ${
                   errors.imageUrl
                     ? "border-red-500/80"
                     : "border-white/15 hover:border-gold/50"
@@ -559,7 +561,7 @@ export function SubmissionForm({
               </div>
 
               <div
-                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-obsidian/50 p-4 text-center transition-colors min-h-[200px] ${
+                className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-obsidian/50 p-3 sm:p-4 text-center transition-colors min-h-[160px] sm:min-h-[200px] ${
                   errors.imageUrl2
                     ? "border-red-500/80"
                     : "border-white/15 hover:border-gold/50"
@@ -629,7 +631,7 @@ export function SubmissionForm({
           <Button
             type="submit"
             disabled={isSubmitting || uploading1 || uploading2}
-            className="w-full h-11 bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors"
+            className="w-full h-12 sm:h-11 bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors text-sm sm:text-base"
           >
             {isSubmitting ? (
               <>

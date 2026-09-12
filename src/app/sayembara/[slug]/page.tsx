@@ -125,7 +125,7 @@ export default async function ContestDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen pb-20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-gold/20 bg-obsidian py-12 sm:py-16">
+      <section className="relative overflow-hidden border-b border-gold/20 bg-obsidian py-8 sm:py-14">
         <div className="absolute inset-0 opacity-15">
           <Image
             src="/brand/bg-batik.webp"
@@ -137,65 +137,65 @@ export default async function ContestDetailPage({ params }: PageProps) {
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Link
               href="/sayembara"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream-muted transition-colors hover:text-gold"
+              className="inline-flex items-center gap-1.5 py-1 text-xs font-semibold text-cream-muted transition-colors hover:text-gold"
             >
               <ArrowLeftIcon className="size-3.5" />
               Kembali ke Daftar Sayembara
             </Link>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[10px] sm:text-xs font-semibold text-gold">
               <SparklesIcon className="size-3.5" />
               SAYEMBARA BEM PENS • REFORMASIASA
             </span>
             <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${phaseInfo.badgeClass}`}
+              className={`inline-flex items-center rounded-full border px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold ${phaseInfo.badgeClass}`}
             >
               Fase: {phaseInfo.label}
             </span>
           </div>
 
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-cream sm:text-4xl lg:text-5xl">
+          <h1 className="mt-3 sm:mt-4 text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-cream">
             {contest.title}
           </h1>
 
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-cream-muted sm:text-base">
+          <p className="mt-2.5 sm:mt-3 max-w-3xl text-xs sm:text-base leading-relaxed text-cream-muted">
             {contest.description}
           </p>
 
           {contest.prizeInfo && (
-            <div className="mt-6 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs text-gold">
+            <div className="mt-4 sm:mt-6 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs text-gold">
               <AwardIcon className="size-4 shrink-0" />
               <span className="font-semibold">{contest.prizeInfo}</span>
             </div>
           )}
 
           {/* Timeline Tracker */}
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <ContestTimelineTracker currentPhase={currentPhase} />
           </div>
         </div>
       </section>
 
       {/* Dynamic Content Section Sesuai Timeline */}
-      <main className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 pt-6 sm:pt-10 sm:px-6 lg:px-8">
         {/* FASE 1: SUBMISSION */}
         {currentPhase === "SUBMISSION" && (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-5 space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-coal p-6">
-                <h3 className="text-lg font-bold text-cream mb-3">Ketentuan Sayembara</h3>
+          <div className="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+              <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-bold text-cream mb-2.5 sm:mb-3">Ketentuan Sayembara</h3>
                 <div className="text-xs leading-relaxed text-cream-muted whitespace-pre-line">
                   {contest.rules ?? "Ikuti panduan desain resmi kampus perjuangan."}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gold/30 bg-gold/5 p-6">
-                <div className="flex items-center gap-2 text-gold font-bold text-sm mb-2">
+              <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4 sm:p-6">
+                <div className="flex items-center gap-2 text-gold font-bold text-xs sm:text-sm mb-1.5 sm:mb-2">
                   <CalendarIcon className="size-4" />
                   Batas Waktu Pengumpulan
                 </div>
@@ -220,12 +220,12 @@ export default async function ContestDetailPage({ params }: PageProps) {
 
         {/* FASE 2: REVIEW */}
         {currentPhase === "REVIEW" && (
-          <div className="rounded-2xl border border-blue-500/20 bg-coal p-10 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
+          <div className="rounded-2xl border border-blue-500/20 bg-coal p-6 sm:p-10 text-center">
+            <div className="mx-auto mb-3 sm:mb-4 flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
               <SparklesIcon className="size-6" />
             </div>
-            <h2 className="text-2xl font-bold text-cream">Pengumpulan Karya Telah Berakhir</h2>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-cream-muted">
+            <h2 className="text-xl sm:text-2xl font-bold text-cream">Pengumpulan Karya Telah Berakhir</h2>
+            <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-cream-muted leading-relaxed">
               Saat ini dewan juri & panitia BEM PENS sedang melakukan kurasi orisinalitas dan verifikasi teknis karya peserta.
               Voting mahasiswa akan resmi dibuka pada{" "}
               <strong className="text-gold">{formatDate(contest.votingStart)}</strong>.
@@ -261,12 +261,12 @@ export default async function ContestDetailPage({ params }: PageProps) {
         {/* FASE 4: FINISHED / PENGUMUMAN */}
         {currentPhase === "FINISHED" && (
           <div>
-            <div className="mb-8 rounded-2xl border border-gold/40 bg-gold/10 p-6 text-center sm:p-8">
-              <AwardIcon className="mx-auto size-10 text-gold mb-3" />
-              <h2 className="text-2xl font-bold text-cream sm:text-3xl">
+            <div className="mb-6 sm:mb-8 rounded-2xl border border-gold/40 bg-gold/10 p-5 text-center sm:p-8">
+              <AwardIcon className="mx-auto size-8 sm:size-10 text-gold mb-2.5 sm:mb-3" />
+              <h2 className="text-xl font-bold text-cream sm:text-3xl">
                 Voting Resmi Telah Berakhir!
               </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-cream-muted">
+              <p className="mx-auto mt-2 max-w-xl text-xs sm:text-sm text-cream-muted">
                 Terima kasih atas partisipasi aktif seluruh mahasiswa PENS. Berikut adalah perolehan hasil voting karya desain terbaik.
               </p>
             </div>

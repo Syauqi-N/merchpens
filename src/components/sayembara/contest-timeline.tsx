@@ -27,15 +27,15 @@ export function ContestTimelineTracker({
   const currentIndex = phaseOrder[currentPhase];
 
   return (
-    <div className={cn("rounded-2xl border border-white/10 bg-coal/80 p-5 backdrop-blur", className)}>
-      <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+    <div className={cn("rounded-2xl border border-white/10 bg-coal/80 p-4 sm:p-5 backdrop-blur", className)}>
+      <div className="mb-3 sm:mb-4 flex items-center justify-between border-b border-white/10 pb-2.5 sm:pb-3">
         <div className="flex items-center gap-2">
           <ClockIcon className="size-4 text-gold" aria-hidden />
           <span className="text-xs font-semibold tracking-wider text-cream uppercase">
             Tahapan Sayembara
           </span>
         </div>
-        <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-bold text-gold">
+        <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-gold">
           {currentPhase === "SUBMISSION"
             ? "Karya Dibuka"
             : currentPhase === "VOTING"
@@ -46,7 +46,7 @@ export function ContestTimelineTracker({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {STEPS.map((step, idx) => {
           const stepNumber = idx + 1;
           const isDone = currentIndex > stepNumber;
@@ -56,7 +56,7 @@ export function ContestTimelineTracker({
             <div
               key={step.key}
               className={cn(
-                "relative flex items-start gap-3 rounded-xl border p-3 transition-all",
+                "relative flex items-start gap-2 sm:gap-3 rounded-xl border p-2.5 sm:p-3 transition-all",
                 isCurrent
                   ? "border-gold/60 bg-gold/10 shadow-sm shadow-gold/5"
                   : isDone
@@ -65,24 +65,24 @@ export function ContestTimelineTracker({
               )}
             >
               {isDone ? (
-                <CheckCircle2Icon className="mt-0.5 size-4.5 shrink-0 text-emerald-400" />
+                <CheckCircle2Icon className="mt-0.5 size-4 sm:size-4.5 shrink-0 text-emerald-400" />
               ) : isCurrent ? (
-                <CircleDotIcon className="mt-0.5 size-4.5 shrink-0 animate-pulse text-gold" />
+                <CircleDotIcon className="mt-0.5 size-4 sm:size-4.5 shrink-0 animate-pulse text-gold" />
               ) : (
-                <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-cream-muted">
+                <span className="mt-0.5 flex size-4 sm:size-4.5 shrink-0 items-center justify-center rounded-full border border-white/20 text-[9px] sm:text-[10px] text-cream-muted">
                   {stepNumber}
                 </span>
               )}
               <div className="min-w-0">
                 <p
                   className={cn(
-                    "text-xs font-semibold tracking-tight truncate",
+                    "text-[11px] sm:text-xs font-semibold tracking-tight truncate",
                     isCurrent ? "text-gold" : isDone ? "text-cream" : "text-cream-muted"
                   )}
                 >
                   {step.title}
                 </p>
-                <p className="text-[11px] text-cream-muted truncate">{step.subtitle}</p>
+                <p className="text-[10px] sm:text-[11px] text-cream-muted truncate">{step.subtitle}</p>
               </div>
             </div>
           );

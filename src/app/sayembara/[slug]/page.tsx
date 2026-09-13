@@ -17,6 +17,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getContestPhase, CONTEST_PHASE_CONFIG } from "@/lib/contest";
 import { ContestTimelineTracker } from "@/components/sayembara/contest-timeline";
+import { FormattedText } from "@/components/sayembara/formatted-text";
 import { VotingGallery } from "@/components/sayembara/voting-gallery";
 import { SubmissionForm } from "@/components/sayembara/submission-form";
 import { formatDate } from "@/lib/format";
@@ -183,24 +184,22 @@ export default async function ContestDetailPage({ params }: PageProps) {
         {currentPhase === "SUBMISSION" && (
           <div className="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-12">
             <div className="lg:col-span-5 space-y-4 sm:space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-6 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-6 space-y-5">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-cream mb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-cream mb-2.5">
                     Tentang & Deskripsi Sayembara
                   </h3>
-                  <p className="text-xs sm:text-sm leading-relaxed text-cream-muted">
-                    {contest.description}
-                  </p>
+                  <FormattedText text={contest.description} />
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-base sm:text-lg font-bold text-cream mb-2">
-                    Ketentuan & Panduan Sayembara
-                  </h3>
-                  <div className="text-xs sm:text-sm leading-relaxed text-cream-muted whitespace-pre-line">
-                    {contest.rules ?? "Ikuti panduan desain resmi kampus perjuangan."}
+                {contest.rules && (
+                  <div className="border-t border-white/10 pt-4">
+                    <h3 className="text-base sm:text-lg font-bold text-cream mb-2.5">
+                      Ketentuan & Panduan Sayembara
+                    </h3>
+                    <FormattedText text={contest.rules} />
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4 sm:p-6">
@@ -242,17 +241,15 @@ export default async function ContestDetailPage({ params }: PageProps) {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-coal p-5 sm:p-6 max-w-3xl mx-auto">
-              <h3 className="text-base font-bold text-cream mb-2">Deskripsi Sayembara</h3>
-              <p className="text-xs sm:text-sm leading-relaxed text-cream-muted mb-4">
-                {contest.description}
-              </p>
+            <div className="rounded-2xl border border-white/10 bg-coal p-5 sm:p-6 max-w-3xl mx-auto space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-cream mb-2.5">Tentang & Deskripsi Sayembara</h3>
+                <FormattedText text={contest.description} />
+              </div>
               {contest.rules && (
                 <div className="border-t border-white/10 pt-4">
-                  <h4 className="text-sm font-semibold text-cream mb-1.5">Ketentuan Lomba</h4>
-                  <div className="text-xs leading-relaxed text-cream-muted whitespace-pre-line">
-                    {contest.rules}
-                  </div>
+                  <h4 className="text-sm font-semibold text-cream mb-2">Ketentuan & Panduan Lomba</h4>
+                  <FormattedText text={contest.rules} />
                 </div>
               )}
             </div>

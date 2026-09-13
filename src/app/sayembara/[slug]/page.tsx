@@ -163,12 +163,8 @@ export default async function ContestDetailPage({ params }: PageProps) {
             {contest.title}
           </h1>
 
-          <p className="mt-2.5 sm:mt-3 max-w-3xl text-xs sm:text-base leading-relaxed text-cream-muted">
-            {contest.description}
-          </p>
-
           {contest.prizeInfo && (
-            <div className="mt-4 sm:mt-6 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs text-gold">
+            <div className="mt-4 sm:mt-5 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs text-gold">
               <AwardIcon className="size-4 shrink-0" />
               <span className="font-semibold">{contest.prizeInfo}</span>
             </div>
@@ -187,10 +183,23 @@ export default async function ContestDetailPage({ params }: PageProps) {
         {currentPhase === "SUBMISSION" && (
           <div className="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-12">
             <div className="lg:col-span-5 space-y-4 sm:space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-bold text-cream mb-2.5 sm:mb-3">Ketentuan Sayembara</h3>
-                <div className="text-xs leading-relaxed text-cream-muted whitespace-pre-line">
-                  {contest.rules ?? "Ikuti panduan desain resmi kampus perjuangan."}
+              <div className="rounded-2xl border border-white/10 bg-coal p-4 sm:p-6 space-y-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-cream mb-2">
+                    Tentang & Deskripsi Sayembara
+                  </h3>
+                  <p className="text-xs sm:text-sm leading-relaxed text-cream-muted">
+                    {contest.description}
+                  </p>
+                </div>
+
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-base sm:text-lg font-bold text-cream mb-2">
+                    Ketentuan & Panduan Sayembara
+                  </h3>
+                  <div className="text-xs sm:text-sm leading-relaxed text-cream-muted whitespace-pre-line">
+                    {contest.rules ?? "Ikuti panduan desain resmi kampus perjuangan."}
+                  </div>
                 </div>
               </div>
 
@@ -220,16 +229,33 @@ export default async function ContestDetailPage({ params }: PageProps) {
 
         {/* FASE 2: REVIEW */}
         {currentPhase === "REVIEW" && (
-          <div className="rounded-2xl border border-blue-500/20 bg-coal p-6 sm:p-10 text-center">
-            <div className="mx-auto mb-3 sm:mb-4 flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
-              <SparklesIcon className="size-6" />
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-blue-500/20 bg-coal p-6 sm:p-10 text-center">
+              <div className="mx-auto mb-3 sm:mb-4 flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
+                <SparklesIcon className="size-6" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-cream">Pengumpulan Karya Telah Berakhir</h2>
+              <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-cream-muted leading-relaxed">
+                Saat ini dewan juri & panitia BEM PENS sedang melakukan kurasi orisinalitas dan verifikasi teknis karya peserta.
+                Voting mahasiswa akan resmi dibuka pada{" "}
+                <strong className="text-gold">{formatDate(contest.votingStart)}</strong>.
+              </p>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-cream">Pengumpulan Karya Telah Berakhir</h2>
-            <p className="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-cream-muted leading-relaxed">
-              Saat ini dewan juri & panitia BEM PENS sedang melakukan kurasi orisinalitas dan verifikasi teknis karya peserta.
-              Voting mahasiswa akan resmi dibuka pada{" "}
-              <strong className="text-gold">{formatDate(contest.votingStart)}</strong>.
-            </p>
+
+            <div className="rounded-2xl border border-white/10 bg-coal p-5 sm:p-6 max-w-3xl mx-auto">
+              <h3 className="text-base font-bold text-cream mb-2">Deskripsi Sayembara</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-cream-muted mb-4">
+                {contest.description}
+              </p>
+              {contest.rules && (
+                <div className="border-t border-white/10 pt-4">
+                  <h4 className="text-sm font-semibold text-cream mb-1.5">Ketentuan Lomba</h4>
+                  <div className="text-xs leading-relaxed text-cream-muted whitespace-pre-line">
+                    {contest.rules}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

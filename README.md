@@ -63,7 +63,7 @@ saat kedaluwarsa/dibatalkan.
 | **Dashboard** | Omzet, kuota varian, varian hampir habis, pesanan kirim perlu follow-up ongkir, dan **analitik per angkatan & jurusan** (filter periode/tipe) untuk bahan promosi. |
 | **Produk** | CRUD produk + **varian** (size/desain/SKU/delta harga/foto/aktif). |
 | **Kategori** | Kelola 5 kategori merchandise. |
-| **Pesanan** | Detail, ubah status, lunas manual (audit), cek ke Duitku, batal (kuota kembali), cetak resi. |
+| **Pesanan** | Detail, ubah status, lunas manual (audit), cek ke Duitku, batal (kuota kembali). |
 | **Pre-Order** | Buat periode + info ambil/kirim, kuota per varian + harga khusus, aktivasi (single-open), tutup/buka kembali. |
 | **Rekap** | Filter tipe/angkatan/jurusan/cara-terima + unduh `.xlsx` (Per Pesanan & Per Item). |
 | **Beranda** | Banner, info toko, default ambil, **nomor WA admin**, dan **master angkatan/jurusan** (satu baris per entri). |

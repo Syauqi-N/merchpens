@@ -12,7 +12,7 @@ import { processPaidOrdersForClosedPeriods } from "@/lib/order-processing";
 import { prisma } from "@/lib/prisma";
 
 import { OrderFilters, type OrderFilterState } from "./order-filters";
-import { OrderPrintTable } from "./order-print-table";
+import { OrderTable } from "./order-table";
 import {
   PAGE_SIZE,
   fulfillmentTypeSchema,
@@ -187,7 +187,7 @@ export default async function AdminOrdersPage({
         />
       ) : (
         <Card className="py-0">
-          <OrderPrintTable
+          <OrderTable
             rows={orders.map((order) => {
               const variantNames = [
                 ...new Set(
@@ -210,9 +210,6 @@ export default async function AdminOrdersPage({
                 total: formatRupiah(order.total),
                 paymentStatus: order.payment?.status ?? null,
                 status: order.status,
-                printable: ["PAID", "PROCESSING", "COMPLETED"].includes(
-                  order.status,
-                ),
               };
             })}
           />
